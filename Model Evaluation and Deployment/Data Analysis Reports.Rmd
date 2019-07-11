@@ -1,0 +1,96 @@
+---
+title: "Data Analysis Reports"
+output: html_document
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(cache=T, warning=FALSE, message=FALSE)
+library(arm)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(gridExtra)
+library(grid)
+
+
+```
+
+
+The results of a data analytics project will typically be conveyed in a presentation,  which is the main way of disseminating information in business organizations.  But a report is  nevertheless an important supplement, serving as a reference for the details in the presentation.
+
+What should be included in a data analysis report?   How should it be written?  
+
+## Report style
+
+The writing found in a data analysis report should be clear and spare, relying on visualizations of the central findings. Here are some guidelines.
+
+### Figures
+
+People read quickly and sloppily.  They will miss the main point if it isn't emphasized.  The best way to emphasize, and convey, the main point is in a plot.  Pick one or two plots to convey the main point.  They should tell the "story." *If a plot doesn't add value to the storyline then it shouldn't be there.*  (Never include a plot just because.) 
+
+Plots are usually better than tables. Why? It is easier to discern important information---especially relationships or comparisons---when it is presented visually.  Sometimes, of course, a table works better than a plot: for example, when exact numbers are required.
+
+Always use captions that provide context and that tell the reader what the plot or table means (what key point does it convey?). The plot and caption should stand alone, in the sense of being interpretable even if the reader does not read the full text (since most won't). It is okay for the caption to repeat the  text of the report.  Always number figures and tables and reference them in the text:  "In Figure 2, we see that ...."
+
+Here is an example of a plot with a lengthy caption.
+
+![](images/Copyofgelman_plot3.jpg)
+
+
+And here is an example of a table with a caption.
+
+![](images/Copyofgelman_table1.jpg)
+
+The writer is not assuming that the reader will automatically know what is going on in the plots or in the table but is rather explaining it in great detail.
+
+
+### Text
+
+Use white space and structure---bolded headings, subheadings, lists with italicized main points---to help convey findings.  Specifically:
+
+- Avoid big blocks of text unless the main point is summarized in an informative heading or subheading. 
+
+- Write so that a reader could read the headings, subheadings, bulleted points and the table and figure captions and  still get the gist of the report. 
+
+- Redundancy is usually not a virtue but it has a place in report writing:  we don't worry about repeating our figure and table captions in the text and again in our summary section.
+
+Here is an example of an effective use of white space and headings:
+
+![](images/Copyoftext1.jpg)
+
+*Our goal as technical writers should be to write in such a way that a reader could skim the report---reading the executive summary, headings, plots and tables (with informative captions)---and still get the main findings.*
+
+## Report structure
+
+A data analysis report should include the following sections: 
+
+1. *Introduction*. 
+    - Briefly describe the business, and, at more length, the business problem. This is material that you will have already covered in your Business Problem Statement, though your initial treatment of the subject there will likely need to be updated for your report.
+    - Describe your primary objective in the project. 
+    - Briefly summarize the data, your analysis, your results and recommendations, as well as any relevant substantive context, background, or framing issues.
+    - Brief outline of remainder of the report.
+
+2. *Data*. Describe the data and your cleaning/modeling procedures:  
+    - Historical scope of the data.
+    - Variables available (and not available). 
+    - Problems with and limitations of the data. 
+    - Your cleaning and modeling choices.
+3. *Methods and Analysis*. What did you do and why? What was your modeling or analytical approach?
+4. *Results*.  What did you find that was relevant to solving the business problem?  You should distinguish between findings that were part of your process---plots and tables created during EDA, for example---and results that are part of a solution to the business problem. You have already highlighted the important results in your introduction, so in this section provide more detail.
+5. *Conclusion(s)/Discussion*. The conclusion should reprise the questions and conclusions of the introduction, including, most importantly, your recommendations.   Augment your discussion with additional observations or details from the analysis. Address any limitations to the analysis or caveats. Circle back to  the company's business problem: to what extent did your project solve that problem?
+6. *Appendix/Appendices*. One or more appendices are the place to describe analytical details and ancillary materials. It is often difficult to find the right balance between what to put in the appendix and what to put in the body of the paper. Generally you should put just enough in the body to make the point, and refer the reader to specific sections or page numbers in the appendix for additional graphs, tables and other details. The appendices might include such items as:
+    - Technical descriptions of (unusual) statistical procedures
+    - Detailed tables or model output
+    - Figures that were not central to the arguments presented in the body of the report 
+    - Computer code used to obtain results.
+
+    
+
+## Report audience
+
+The data analysis report should be written for several different audiences at the same time:
+
+- *Primary audience*: A primary collaborator or client. Reads the *Introduction* and perhaps the *Conclusion* to find out what you did and what your conclusions were, and then perhaps fishes/skims the rest, stopping only for some additional details on the parts that he/she thought were interesting or eye-catching. Organize the report around the conversation you want to have with this person about what you've learned. 
+- *Secondary Audience*: An executive person. Probably only skims the *Introduction* and perhaps the *Conclusion* to find out what you did and what your conclusions were. 
+- *Secondary Audience*: A technical supervisor. Reads everything, including the *Appendix* for quality control: Were your conclusions and recommendations supported by your analysis?  Add text to the technical material in the *Appendix* so that this person sees how and why you carried out the more detailed work shown in the *Appendix*.
+

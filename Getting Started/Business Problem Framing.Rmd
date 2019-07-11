@@ -1,0 +1,254 @@
+---
+title: "Business Problem Statement"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = FALSE)
+
+```
+
+## Case
+
+For this tutorial we will borrow the MegaTelCo churn problem from *Data Science for Business* (DSB). Here is the description of the case from DSB:
+
+Assume you just landed a great analytical job with MegaTelCo, one of the largest telecommunication firms in the United States. They are having a major problem with customer retention in their wireless business. In the mid-Atlantic region, 20% of cell phone customers leave when their contracts expire, and it is getting increasingly difficult to acquire new customers. Since the cell phone market is now saturated, the huge growth in the wireless market has tapered off. Communications companies are now engaged in battles to attract each  customers while retaining their own. Customers switching from one company to another is called churn, and it is expensive all around: one company must spend on incentives to attract a customer while another company loses revenue when the customer departs.You have been called in to help understand the problem and to devise a solution. Attracting new customers is much more expensive than retaining existing ones, so a good deal of marketing budget is allocated to prevent churn. Marketing has already designed a special retention offer. Your task is to devise a precise, step-by-step plan for how the data science team should use MegaTelCo’s vast data resources to decide which customers should be offered the special retention deal prior to the expiration of their contracts.
+
+We will need to embellish this case a little to make it work for this tutorial.  Let's add the following details.
+
+- You work on the company's new data science team, headed by JoAnn Wright, a PhD sociologist who is an expert statistician with long experience in business analytics.
+- The marketing department also has an analytics team.  The folks on that team tend to do simple data summaries, and will occasionally design  and analyze A/B tests for  evaluating marketing campaigns and website design.  
+- The marketing department  is run by Josephine Baker, who has an undergraduate degree in business, but who has accumulated lots of work experience in marketing.
+- The CEO of the company, Joseph Stiglitz, has a lot of respect for Ms. Baker, but has begun investing heavily in data science, as evidenced by the company's new data science team, and would like Dr. Wright to handle the project.  Ms. Baker has grudgingly accepted this arrangement.
+- Mr. Stiglitz is not a statistician or data scientist but is an avid reader of the Harvard Business Review, and has read many articles about the miracles produced by big data and data science. He accordingly has high hopes for data science, expecting that the investment in that capability will  help improve the company's operations beyond the basic analytics  currently provided by marketing.
+- There are other departments at MegaTelCo that will also benefit from, be consumers of, the analytics provided by the new data science team.
+- You yourself are a newly minted graduate from the University of Utah's MSBA program,  and you would like to impress your new boss, Dr. Wright,  as well as  Mr. Stiglitz, the CEO, and preserve good working relationships with your colleagues in the marketing department.
+- Dr. Wright has privately told you to not accept at face value any of the solutions offered by marketing.
+
+## Business problem  framing
+
+Business problem framing can be more challenging than you think!  This is because there are four factors that are competing for your attention:
+
+1. **Stakeholders.**  "Where you stand depends on where you sit!"  Stakeholders will usually define the problem from their own interests and perspective.  You can plan to make stakeholders part of the solution by doing good stakeholder analysis and interviews.
+
+2. **Problem Complexity.**  Business problems usually have many causes and symptoms. The problem might be wicked, hard or tame, but always respect it!
+
+What is a [wicked problem](https://en.wikipedia.org/wiki/Wicked_problem)? "A wicked problem is a problem that is difficult or impossible to solve because of incomplete, contradictory, and changing requirements that are often difficult to recognize."
+
+3. **Analysts' Expertise.** "If all you have is a hammer, every problem is a nail."  
+
+4. **Solutions in Search of  Problem.** It is very tempting to simply try to fit an available solution to the problem.  This  re-use of solutions can be efficient, but it can also ignore important nuances of the new problem. Don't "pound a square peg into a round hole."  You won't know all the answers when define the business problem, so avoid being overly specific at first.
+
+Your first goal in problem framing is to get a 360 degree view of the problem.  To do so you need to ask lots of questions and  consider the problem from different angles. The 5 W's and Heilmeier's Catechism will help:
+
+Think about the problem in terms of the 5 W's: who, what, where, when, and why.
+
+- **Who**:  is involved, impacted, or influential?
+- **What**:  is the problem or opportunity?
+- **Where**:  will the work take place?
+- **When**:  are key milestones, deadlines, decisions?
+- **Why**: does the problem occur additionally?
+
+Additionally, review the so-called [Heilmeier Catechism](https://www.darpa.mil/work-with-us/heilmeier-catechism). These questions were written by George H. Heilmeier, a former DARPA director (1975-1977), to help Agency officials think through and evaluate proposed research programs.
+
+- What are you trying to do? Articulate your objectives using absolutely no jargon.
+- How is it done today, and what are the limits of current practice?
+- What is new in your approach and why do you think it will be successful?
+- Who cares? If you are successful, what difference will it make?
+- What are the risks?
+- How much will it cost?
+- How long will it take?
+- What are the mid-term and final "exams" to check for success?
+
+## Initial problem statement
+
+In the case of MegaTelCo  you have a fairly clear-seeming business problem: customer retention in the company's wireless business is poor.   20% of  customers typically do not sign up for the service again when their contracts expire.  Because it it is expensive to acquire new customers, the company would like to  ensure that existing customers renew their contracts. The  marketing department is charged with improving retention, which they  proposed to do by extending  incentives  to existing customers in the form of special offers.
+
+The case indicates that "you have been called in to help understand the problem and to devise a solution."  However, marketing has already designed a special offer, before you have even had a chance to grapple with the problem and think about solutions.  Mindful of Dr. Wright's warning, you have resolved to think through all aspects of the business problem from first principles.
+
+The first thing that occurs to you to ask is: why is customer churn a problem in the first place?  Well, you think, when the company loses a customer to churn, it loses future revenue. And to replace that revenue through a new customer will cost more than keeping the old customer ("Attracting new customers is much more expensive than retaining existing ones"). Hence the company's emphasis on retention. You think it makes sense to spend money on retention up to---but not beyond---the cost to  acquire a new customer. So although marketing has already designed the special retention deal, you are not confident that they have done so with knowledge of how much it costs to attract new customers, or, for that matter, how much  it will cost to retain the  existing customer.  
+
+It occurs to you, additionally, that existing customers  are probably not all equally likely to  churn.   That is, some customers are probably loyal, and a special offer would be wasted on them: they would have stayed without the offer. Other customers would not stay even with an offer, which would therefore be wasted on them. So you agree with marketing that one of the analytical challenges for this project is to figure out *which* customers should get the special offer.  
+
+
+Here is the problem statement you received: MegaTelCo has poor customer retention.
+ 
+After reviewing your information, you come up with the following provisional, revised and refined problem statement:  MegaTelCo is losing future revenue due to poor   retention  among  customers who could be persuaded with a special offer to renew their contracts.  Customers who either can't be persuaded or don't need persuading should not be involved in this campaign.
+
+You feel that this is a good beginning, though you know that there are additional complications related to defining the  appropriate customer segment and, based on projected future revenue for a  given customer,  extending an appropriate special offer.   For example, you definitely would not want the cost of retention (the expenditure on the special offer) to exceed  projected future revenue. What if the customer was likely to renew only for another month? That knowledge would impact how much you  were willing to spend  on retention. Consequently, it is not clear to you how marketing could have already designed a retention campaign without some estimate of future revenue for customers.
+ 
+##  Interviews
+
+### Cast of characters
+
+The next step is to get more information  to improve your 360 degree view  of the problem. To that  end  you set up interviews  with involved colleagues.   In general, we can distinguish between the following groups:
+ 
+- *Clients*.  The person who engages you to conduct the project. The client will have his/her own objectives, perspective, and biases that may differ from others in the organization. The client may not be the most knowledgeable person about the problem. Furthermore, the client may not be the decision-maker but only an influencer.
+
+- *Sponsors*.  Often the client will not actually be the person who funds the project, provides access or clearances, or is the problem owner. These other people--- we'll call them sponsors---all have influence on the success of the project.
+
+- *Helpers*.  often you will be  offered support from the client or sponsors in the form of "helpful"  people. Be careful: they may have other agendas or lack the necessary skills.
+
+- *Stakeholders*.  Anyone who has an influence on or is impacted by the solution to the business problem.
+ 
+- *Subject matter experts (SMEs)*. An expert is a person who is an authority in a particular area or topic.
+
+- *Decision-makers.*  The people who will make the important decisions. A decision is defined as: an irrevocable commitment of resources.
+
+### Stakeholders
+
+You know that, of the five W's, the "who"---especially stakeholders---are the most critical to the long term success of the project.  Stakeholders  are defined as anyone affected by the project, though they may have different levels of input or involvement during the project. Who are your stakeholders?   You do a quick [stakeholder analysis](https://en.wikipedia.org/wiki/Stakeholder_analysis)  using the following matrix:
+
+![](stakeholders_matrix.jpeg)
+
+
+
+
+Mendelow's matrix allows you to categorize stakeholders in terms of influence and engagement, and provides guidance on how to manage the relationship.
+
+Everyone in the company  is busy,  so setting up interviews is a challenge. However, you have arranged to talk to the following colleagues:
+ 
+ 
+- Your boss, Dr. Wright. She is your primary client and an important  stakeholder and SME.  You place her in the upper right quadrant of the matrix: "Ownership."
+
+- The Director of Marketing, Ms. Baker.  She is an important stakeholder and SME.   you place her in the lower right quadrant: "Get Buy-In."  she will need to sign off on whatever you recommend but you  to not answer to her.
+
+- The Manager of the Call Center, Warren Harding, since call center operators would be involved in the outreach effort.  Mr. Harding will be impacted by the marketing campaign but is not a strong influencer. You place him in the upper left quadrant of the matrix: "Have a Voice."  you will want to pay attention to what he says about the viability of executing  the proposed campaign.
+
+- A marketing analyst who has worked on campaigns in the past, Jill Lepore.   Ms. Lepore is an SME. she should be able to provide good insight into the data, recount details of past campaigns, as well as provide some insight into the politics and the company. However, she is  herself a strongly partisan  member of the marketing team,  and tends to be suspicious of your new department, which has encroached on the work she used to do.
+
+- The CEO, Mr. Stiglitz. You were unable to get an interview with Mr. Stiglitz. But you know that he is keenly interested in the project. Therefore, you place him in the lower left quadrant of the stakeholders matrix ("Awareness"), and make a note to send him regular  updates, after vetting the progress report with your boss.
+
+
+###  Interview questions
+
+Your goal in  the interviews is to get more information.  therefore, your goal is to be a good listener, and to ensure that you cover the domain adequately you have forced yourself to write down at least 10 interview questions in advance. This will allow you to concentrate on the answers rather than having to come up with questions during the conversation.
+
+You want to use relationship skills (active listening, probing  and open-ended questions, and acknowledging positive comments)  to:
+
+- establish and maintain rapport
+- gather personal perception supported by facts and stories
+- test the findings from other inputs
+- ask some questions you already think you know the answers to
+
+You have asked one of your colleagues in your data science group to come with you and take notes. That frees you up to be an active, attentive listener.
+
+One of the things that you will be listening for is distinguish between issues that have been decided, issues that remain to be decided, and issues that can be put off and thought about later. The following decision hierarchy helps formalize these differences:
+
+![](decision_hierarchy.jpeg)
+
+
+You will also be trying to assess whether the business problem  needs further refinement from your initial definition and whether it is amenable to an analytics solution, Determine if you can obtain stakeholder agreement for an analytic solution, and whether you can make a business case for your analytics solution.
+
+Here are some of the questions you have come up with (not all of them, of course, will be appropriate for all interviews):
+ 
+1. As I understand it, the business problem for this project is how to prevent, or reduce, customer churn.  Does that seem like an accurate description of the problem to you?
+2. Are there aspects of the problem that you think I should know about, for example that others in the company might not fully appreciate?
+3. What work has previously been done on this problem? 
+4. What was the level of success, exactly, for that previous work In terms of identifying customer segments for intervention?  What, in your opinion, should be the benchmark of success for future work?
+5. Have there been previous marketing campaigns to curb churn? What was the  methodology and success of those campaigns?  How, in your opinion, could future campaigns be improved?
+6. What data exactly is available for this project?  How many fields are there? How far back  In time does the data go?
+7. Who would I contact to arrange access to the data and who could answer questions about the data fields?
+8. Who else in the company do you think it would be valuable for me to talk with?
+9. What is the biggest logistical  or political challenge in implementing a retention campaign?
+10. What exactly are the costs associated with the special retention offer?  Are there some that are not obvious?
+11. Is there anything else I should know about this problem?
+
+ 
+### Interview results
+
+In some cases your interviews were lengthy and thorough; in others they were short  and provided little usable information. for example, Mr. Harding was called away after 10 minutes to deal with some crisis in the call center.
+
+Your goal in the next several days is to read through the notes that your colleague made and begin to assemble a 360 degree view of the problem, a map that looks something like this:
+
+![](360_view.png)
+
+ 
+But here is a brief snapshot of the information you got.
+
+- You shared your refined business problem statement with your boss, Dr. Wright, and  she applauded your work, agreeing that it would be essential to accurately segment the customer population and to take into consideration the cost of the campaign, compared to the likely future revenue of a customer. The two of you spent some time brainstorming how you would accurately forecast future revenue. It is a tricky analytical problem, involving not only the customer's call plan but also the customer's likely longevity. However,  it seems analytical tools exist to solve the problem.  She recommended  keeping the initial analysis fairly simple, and restricting your efforts  to predicting churn for the next subscription period. You suggested using a decision tree, and she agreed that would be a good place to start.   She emphasized that it would be crucial to evaluate the accuracy of your estimates of customer churn, as low accuracy could  definitely imperil the success of the campaign.
+
+- Mr. Harding was grumpy, not very responsive, and had to leave almost right away. You didn't really get anything of value from him, though he did say that you should keep the call script as simple as possible.
+ 
+- You were pleasantly surprised in your meeting with Ms. Baker, the Director of Marketing.  She appreciated your thinking on customer segmentation, and wondered aloud if  previous campaigns had not done enough to  segment customers based on the probability to turn; she thought it possible that resources had been wasted on customers who a) were very likely to churn or b) not at all likely to churn. She liked your idea of focusing on the group that might be persuaded to stay with the appropriate incentive. However, she was also adamant that the data science group  should pay attention to the long experience of analysts in the marketing department in running these campaigns,  and insisted that  you   get one of the marketing analysts  to sign off on your plans. You mentioned that you were scheduled to meet with Ms. Lepore, and that you would ask your boss to give Ms. Baker a call about  formal collaboration and permission.  (Your boss's comment: "Permission comes from me.")
+
+- You next met with Ms. Lepore, the marketing analyst. She gave you great advice on which data engineer to work with, idiosyncrasies about the data, the meaning of some of the fields with missing  observations, and warned you that Ms. Baker and Dr. Wright do not get along well.  You also learned that, in fact, no customer segmentation had been done for previous campaigns, indicating that the bar would be pretty low for your project to be judged a success. Indeed, it turns out that the last campaign was estimated to have improved retention by just 2%.
+
+## Analytics problem framing
+
+It is important to be aware of the different  classes of analytical problems.
+
+- *Organizational complexity*. Some problems are hard to solve because they occur in organizations, with difficult group dynamics or a complicated, hierarchical organizational structure, or many stakeholders with differing objectives, perspectives and beliefs. The best time to address the organizational complexity is when you're setting up the project structure.
+
+- *Content complexity*. Some problems are hard to solve because the content is complex, with too much or too little data, many different scenarios each of which have multiple alternatives, few subject matter experts, biases in the data, or constantly evolving industry values and business models/environments.
+
+![](complexity.png)
+
+- *Analytic complexity*.  Some problems are hard because the domain contains high levels of uncertainty, lots of interdependent variables, dynamic business and industry cycles,  or multiple value measures.  
+
+- Then there are *wicked problems*.  Wicked problems are poorly defined with roots that are complex and tangled, involve many stakeholders that shared power and opposing views,  have conditions that change with every attempt to address it, or are misunderstood until a solution is in hand.  Moreover, there is often nothing to indicate the right answer to the problem.
+
+```{r quiz}
+quiz(
+  question("What sort of complexity is involved in  sending astronauts to the moon?",
+    answer("content"),
+    answer("analytic"),
+    answer("organizational", correct = TRUE)
+  ),
+  question("What sort of complexity is involved in predicting future stock prices?",
+    answer("content"),
+    answer("analytic", correct = TRUE),
+    answer("organizational")
+  ),
+  question("Is solving a Rubik's cube a wicked or tame problem?",
+    answer("wicked"),
+    answer("tame", correct = TRUE)
+  ),
+  question("Is solving  homelessness a wicked or attainment problem?",
+    answer("tame"),
+    answer("wicked", correct = TRUE)
+  )
+)
+
+```
+
+It is important to understand the source of the complexity in a problem so that you do not blunder into a project unprepared!
+
+Successfully framing the analytics problem answers the "How" in the 5W's.
+
+- How will we approach the problem?
+- How can our analytics methods be applied?
+- How can we collect the data needed to do the analysis?
+- How will we show/represent the outputs or results?
+- How will the models be used--- one time analysis or continuous, real time?
+- How will the models be maintained and kept up to date?
+- How will we know if we are successful?
+
+## Business problem statement
+
+Your next task is to write the business problem statement, which you will circulate to stakeholders for testing. Your hope is that they will be able to surface misunderstandings  and blindnesses that you can address in another---hopefully, the final---draft. Ultimately, you want everybody to sign off on your plan.
+
+What goes into a business problem statement exactly? It is essentially an  informal contract for work  that has (some of) the following elements,  as required by the context.
+
+- *Vision*: What does the world look like if we solve the problem? What are the benefits? What are possible costs or downsides?
+
+- *Problem Description / Issue Statement*: One or two sentences that describe the problem using specific issues. (It is not a "lack of a solution" statement.)
+
+- *Approach*: The process that will get followed to solve the problem.
+
+- *Purpose*: Why, really, are we doing this project? 
+
+- *Scope*: What will be in scope and what will be out of scope? What might be added later?
+
+- *Perspective*: Whose perspective will we use to conduct the project? Customer? Stakeholders?
+
+- *Likely Methodology*: What methods are we likely to use?
+
+![](likely_methods.png)
+
+- *Project Team*: Who is going to do the project?
+
+- *Timeline*: When will the project be finished? When will important project milestones be reached?
+

@@ -1,0 +1,13 @@
+name: data_understanding_and_preparation
+title: Data Understanding and Preparation
+username: u0034873
+account: u0034873
+server: rstudio-connect.business.utah.edu
+hostUrl: https://rstudio-connect.business.utah.edu/__api__
+appId: 18
+bundleId: 167
+url: https://rstudio-connect.business.utah.edu/content/18/
+when: 1561131924.39977
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: adviseinvest_data_exercise_answers.Rmd|adviseinvest_dirty.csv|adviseinvest.csv|Data_Understanding_and_Preparation.html|import_churn.R|megatel_churn.csv|stacked_bar.png|Data_Understanding_and_Preparation_files

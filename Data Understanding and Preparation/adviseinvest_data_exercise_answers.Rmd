@@ -1,0 +1,91 @@
+---
+title: "AdviseInvest Data Exercise Answer Key"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+
+```
+
+## Get Data
+
+
+```{r}
+d <- read_csv("adviseinvest_dirty.csv")
+
+glimpse(d)
+
+summary(d)
+```
+
+
+Here is a data dictionary:
+
+- ANSWERED: Indicator for whether the call was answered.
+- INCOME:  Annual income of customer
+- FEMALE: Indicator for whether the customer is female
+- AGE:  Age of customer
+- JOB:  Indicator for  job type.
+- NUM_DEPENDENTS:  Number of dependents.
+- RENT:  Indicator for whether customer rents
+- OWN_RES:  Indicator for whether  customer owns residence
+- NEW_CAR:  Indicator of whether the  customer owns a new car
+- CHK_ACCT: Number of checking accounts
+- SAV_ACCT: Number of savings accounts
+- NUM_ACCTS:  Total number of   other accounts
+- MOBILE:  Indicator for whether the call back number is mobile
+- PRODUCT:  Type of product purchased. (0 represents no purchase)
+
+## Clean data
+
+### Create factors
+
+```{r}
+d <- d %>%
+  mutate(job = factor(job),
+         product = factor(product))
+```
+
+### Filter out rows with mistaken data
+
+```{r}
+d <- d %>%
+  filter(income > 0,
+         num_accts < 5,
+         !is.na(new_car))
+
+summary(d)
+```
+
+## Explore data
+
+1. Mean of Answered
+
+```{r}
+mean(d$answered)
+```
+
+2. Plot chk_acct against answered.
+
+```{r}
+d %>%
+  mutate(answered = factor(answered)) %>%
+  ggplot(aes(answered, chk_acct)) + 
+  geom_boxplot()
+```
+
+3. Plot of mobile against answered.
+
+```{r}
+d %>%
+  mutate(answered = factor(answered),
+         mobile = factor(mobile)) %>%
+  group_by(mobile, answered) %>%
+  count() %>%
+  group_by(answered) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ggplot(aes(mobile, proportion, fill = answered)) + 
+  geom_bar(stat="identity", position = "dodge")
+```

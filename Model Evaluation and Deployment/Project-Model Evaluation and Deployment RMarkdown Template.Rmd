@@ -1,0 +1,77 @@
+---
+title: "Project-Model Evaluation and Deployment RMarkdown Template"
+author: ""
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+library(magrittr)
+
+```
+
+Note:  
+
+- Change the information in the yaml header above:  title and author
+- Make sure output is html_document.
+- Once you are finished coding, run each chunk individually to make sure there are no errors.  (If necessary fix your code.) Once your code is error-free, click "knit" on the menu above. Your document should compile to HTML, provided that you have output set to "html_document."
+- In the code chunk above ("setup"), echo is set to TRUE.  This means that the code in your chunks will be displayed, along with the results, in your compiled document.
+
+
+## Load and Transform Data
+
+
+```{r}
+
+```
+
+## Fit model
+
+
+```{r}
+
+```
+
+## Questions
+
+### Q1
+
+
+```{r}
+
+```
+
+### Q2
+
+```{r}
+
+```
+
+
+### Q3
+
+
+```{r}
+
+```
+
+### Q4
+
+
+```{r}
+
+```
+
+
+### Q5
+
+
+### Q6
+
+```{r}
+
+```
+

@@ -1,0 +1,172 @@
+---
+title: "Project-Model Evaluation and Deployment"
+author: ""
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+library(magrittr)
+
+```
+
+Note:  
+
+- Change the information in the yaml header above:  title and author
+- Make sure output is html_document.
+- Once you are finished coding, run each chunk individually to make sure there are no errors.  (If necessary fix your code.) Once your code is error-free, click "knit" on the menu above. Your document should compile to HTML, provided that you have output set to "html_document."
+- In the code chunk above ("setup"), echo is set to TRUE.  This means that the code in your chunks will be displayed, along with the results, in your compiled document.
+
+## Load and Transform Data
+
+Here is the data dictionary:
+
+- ANSWERED: Indicator for whether the call was answered.
+- INCOME:  Annual income of customer
+- FEMALE: Indicator for whether the customer is female
+- AGE:  Age of customer
+- JOB:  Indicator for  job type.
+- NUM_DEPENDENTS:  Number of dependents.
+- RENT:  Indicator for whether customer rents
+- OWN_RES:  Indicator for whether  customer owns residence
+- NEW_CAR:  Indicator of whether the  customer owns a new car
+- CHK_ACCT: Number of checking accounts
+- SAV_ACCT: Number of savings accounts
+- NUM_ACCTS:  Total number of   other accounts
+- MOBILE:  Indicator for whether the call back number is mobile
+- PRODUCT:  Type of product purchased. (0 represents no purchase)
+
+
+```{r}
+d <- read_csv("adviseinvest_clean.csv") %>% 
+   mutate(job = factor(job), 
+         female = factor(female),
+         rent = factor(rent),
+         own_res = factor(own_res),
+         new_car = factor(new_car),
+         mobile = factor(mobile))
+
+write.csv(d[,-1], "adviseinvest_clean.csv", row.names = F)
+
+summary(d)
+
+
+glimpse(d)
+
+```
+## Fit model
+
+
+```{r}
+(tree_model <- rpart(answered ~ ., data = d))
+
+table(predicted = predict(tree_model, type = "class"),
+      observed =d$answered)
+
+table(predicted = predict(tree_model, type = "class"),
+      observed =d$answered) %>% 
+  prop.table
+
+sum(d$answered==predict(tree_model, type = "class"))/nrow(d)
+
+```
+
+## Questions
+
+### Q1
+
+Using adviseinvest_clean.csv, fit a tree model of "answered" (which you have turned into a factor) using the rpart()  function and all the predictors (minus product).  A tree model estimates a probability for each leaf node, so the number of unique probabilities estimated by the model will equal the number of leaf nodes.  The accuracy of this model, which you reported for the last project quiz, is .76.  How many unique probabilities does this model estimate for  "answered" = "yes"? (Do not round the predicted probabilities.)
+
+```{r}
+
+predict(tree_model, type = "class") %>% 
+  head
+
+predict(tree_model, type = "prob") %>% 
+  head
+
+table(predict(tree_model, type = "prob")[,2])
+
+
+```
+
+### Q2
+
+You would like to provide some guidance to AdviseInvest for which customers should be scheduled for a call based on the tree model's class label predictions.  If you use the default settings for predicting a class label, what proportion of the customers in the dataset would you recommend scheduling?
+
+```{r}
+
+table(predict(tree_model, type = "class")) %>%
+  prop.table()
+
+
+```
+
+
+### Q3
+
+Create a contact list for AdviseInvest with the customers who have the highest model-estimated probability of answering at the top of the list. What is the age and gender and income of the customer at the top of the list?
+
+```{r}
+
+d %>%  mutate(prob_answer = round(predict(tree_model, type = "prob")[,2], 2)) %>% 
+  arrange(desc(prob_answer))
+
+
+
+```
+
+### Q4
+
+Your contact at AdviseInvest has reported that utilization of sale representatives is currently at about 50% due to a poor answer rate.  Could you use your model to improve utilization?  Explain your answer. 
+
+```{r}
+
+d %>% mutate(prob_answer = round(predict(tree_model, type = "prob")[,2], 2)) %>% 
+  arrange(desc(prob_answer)) %>% 
+  mutate(customers = 1:n()/n(),
+         util = cummean(ifelse(answered=="yes", 1, 0))) %>%
+  ggplot(aes(customers, util)) +
+  geom_line() +
+  labs(y = "Utilization of Sales Representatives",
+       x= "Percentage of customers (decreasing by score)",
+       title = "Average utilization at ")
+
+
+
+```
+
+
+### Q5
+
+Here is a profit curve for the AdviseInvest case with revenue per customer who answers estimated at 100 dollars and the cost associated with a call estimated at 25 dollars.
+
+For this dataset, approximately what percentage of customers should be called in order to maximize profit?
+
+### Q6
+
+Reproduce the above plot and upload a screenshot of your code and the resulting plot.
+
+```{r}
+revenue <- 100
+cost <- 25
+
+
+d %>% mutate(prob_answer = predict(tree_model, type = "prob")[,2]) %>% 
+  arrange(desc(prob_answer)) %>%
+  mutate(profit = ifelse(answered=="yes", revenue - cost, -cost),
+         cum_profit = cumsum(profit),
+         customers = 1:n()/n()) %>% 
+  ggplot(aes(customers, cum_profit))+
+  geom_line() + 
+  labs(title= "Profit curve for tree classifier in AdviseInvest case",
+       x = "percentage of customers (decreasing by score)",
+       y = "cumulative profit") +
+  theme_minimal()
+   
+
+```
+

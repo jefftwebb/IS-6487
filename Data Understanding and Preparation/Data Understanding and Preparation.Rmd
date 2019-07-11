@@ -1,0 +1,860 @@
+---
+title: "Data Understanding and Preparation"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(knitr)
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE)
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# setwd("~/Box Sync/IS-6487/Data Understanding and Preparation")
+# d <- read_csv("megatel_churn.csv")
+# 
+# d$HOUSE[3321] <- -d$HOUSE[3321]
+# d$HANDSET_PRICE[300] <- 2000234
+# d$OVER_15MINS_CALLS_PER_MONTH[c(15,150,1500)] <- NA
+# d$INCOME[1789] <- -d$INCOME[1789]
+# d$ID <- sample(20000, 5000)
+# write.csv(d, "megatelco.csv", row.names = F)
+
+
+simpsons <- read_csv("simpsons_data.csv")[,-1]
+
+simpsons <- simpsons %>%
+  mutate(x = round(x, 2),
+         y = round(y, 2),
+         group = factor(group))
+
+```
+
+
+## Business Problem Statement
+
+After the last tutorial you wrote a Business Problem Statement for the MegaTelCo  case, which probably resembled the following:
+
+MegaTelCo currently loses about 20% of its customers every subscription period. This is a costly problem: lost customers represent lost revenue, and acquiring new customers is expensive.  
+
+The Marketing Department has done a fantastic job in previous campaigns to improve customer retention, increasing it an estimated 2% from baseline.  The purpose of the  proposed project is to prevent future revenue loss due to poor retention among customers who could be persuaded with a special offer to renew their contracts.  This project will support a new retention campaign, based on additional analytics, specifically:
+
+- Predict which customers will churn using a classification model tuned for maximum accuracy.
+- Segment the customer population by identifying, among those likely to churn, which customers are  also most  likely to respond to a special re-enrollment offer.
+
+Marketing campaigns are costly. Targeting customers more precisely than has been done in the past should improve the ROI for the campaign. The benchmark for success on this project is to match  improvements in retention  for previous campaigns (2%), while spending substantially less money.
+
+The project deliverable will be a list of customers  sent to marketing to include in the campaign. Additional deliverables will need to be agreed upon with the analyst and added to a revised business problem statement.
+
+The project will be completed by December 1, with the draft of the report circulated  for comments by November 1.  This timeline will provide plenty of time for Marketing  to prepare for a campaign kicking off on January 15.
+
+## Tasks
+
+In ABOK Ch. 8, the job tasks associated with the CRISP-DM phases of data understanding and data preparation are:
+
+1. Identify and Prioritize Data Needs and Sources
+2. Acquire Data
+3. Harmonize, Rescale, Clean and Share Data
+4. Identify Relationships in the Data
+5. Document and Report Finding
+6. Refine the Business and Analytics Problem Statements
+
+This amount of detail is helpful and warranted.  For example, with respect to the first task, most real-world analytics  projects involve a data query or request. Using your understanding of the business problem, you  define the dataset you think you will need for the project. Typically, SQL code would then be written (either by you or an analyst) to extract the specified data from an existing database.  In the MegaTelCo case  we have defined the analytics problem as classification, since we  want to model and predict customer churn based on historical data.  We therefore need a variable in the data set representing customer churn, as well as a variety of possible predictors consisting in behavioral and financial information.  Exactly which variables should be included?   That is a complicated question. To answer it intelligently would require a more or less sophisticated understanding of the phenomenon of churn, an understanding that could be obtained by interviewing subject matter experts.
+
+However, to make the process easy to remember and implement, we can simplify these JTA into three main steps:
+ 
+1. Get data
+2. Clean data
+3. Explore data
+
+
+## Get Data
+
+The variables you can use in a model will always be limited to those that are available, so sometimes the first JTA task in this CRISP-DM phase really is as simple as "get data." In the case of the MegaTelCo project, let us suppose, the dataset for the analysis has already been  curated by Marketing and includes every data element collected by the company that might reasonably be associated with---or could conceivably explain---customer retention.
+
+Here is the dataset you received from Marketing.
+
+### MegaTelCo Data Dictionary
+
+
+```{r}
+data.frame(Variable = c("College", "Income",  "Overage", "Leftover", "House", "Handset_price", "Over_15mins_calls_per_month", "Average_call_duration", "Reported_satisfaction", "Reported_usage_level", "Considering_change_of_plan", "Leave","ID"),
+            Explanation = c("Is the customer college educated?"," Annual income","Average overcharges per month","Average % leftover minutes per month","Estimated value of dwelling (from the census tract)", "Cost of phone", "Average number of long calls (15 mins or over) per month", "Average duration of a call", "Reported level of satisfaction", "Self-reported usage level", "Was customer considering changing his/her plan?","Class variable: whether customer left or stayed", "Numeric customer ID")) %>%
+  kable
+```
+
+In reviewing the data dictionary, you should begin thinking about how you will use these different variables.
+
+```{r target}
+quiz(
+  question("Which variable is the target variable?",
+    answer("College"),
+    answer("Income"),
+    answer("Overage"),
+    answer("Leftover"),
+    answer("House"),
+    answer("Handset_price"),
+    answer("Over_15mins_calls_per_month"),
+    answer("Average_call_duration"),
+    answer("Reported_satisfaction"),
+    answer("Reported_usage_level"),
+    answer("Considering_change_of_plan"),
+    answer("Leave", correct = TRUE),
+    answer("ID")
+  )
+)
+
+```
+
+
+### Import data
+
+Let's import that dataset, megatelco.csv, making sure also to load the packages we'll need. 
+
+Note that this tutorial is written as if we were working within an R Markdown document with code chunks. Some of the later chunks not involving changes to the data will be interactive.
+
+
+```{r global, echo=T, message=FALSE, warning=FALSE}
+
+# Load packages
+library(tidyverse)
+
+# Import data
+d <- read_csv("megatelco.csv")
+
+
+```
+
+Of course, for this code to work on your machine the file you are loading must be in the working directory.  Which folder is that?  You can check with `getwd()`.
+
+
+Here we have imported the megatelco.csv file from the working directory and assigned it to an object, d (for "data"), stored in memory. I like to keep the names of data objects short to reduce typing. 
+
+Notice that in the code chunks I am including comments (text preceded by a hashtag, #, is ignored by R). This makes my code easier to interpret---for me, when coming back to it, or for a colleague, when doing peer review.
+
+
+
+### Inspect data
+
+The next step is to take a look at the data and  make sure that  it loaded correctly. I like to start out by using the `glimpse()` function from `dplyr` which 
+
+- Identifies variable types. 
+- Gives the dimensions of the data.
+- Prints the first 10 rows.
+
+```{r glimpse, echo=T, message=F, warning=F}
+# Inspect data
+glimpse(d)
+```
+
+The `summary()` function in base R is useful for seeing how the data is distributed.  This is a generic function in R, meaning that it can be used to produce summaries for different sorts of objects. When called on a data frame it summarizes distributions by variable types as follows:
+
+- continuous:  min, 1st quartile, median, mean, 3rd quartile, max.
+- character: count of observations.
+- factor: counts of observations by level.  
+
+```{r summary, echo=T, message=F, warning=F}
+# Inspect data
+summary(d)
+
+```
+
+
+
+Some problems are immediately apparent in the summary table.  All the categorical (or qualitative) variables  have a data type of character. These should be converted into factors, not only because storing such variables as factors is more efficient, but also because they may have a  structure that should be represented with factor levels. For example, REPORTED_SATISFACTION  has the following unique values:
+
+```{r unique, echo=T, message=F, warning=F}
+# Find unique values with distinct()
+
+d %>%
+  distinct(REPORTED_SATISFACTION) 
+
+```
+
+
+Because REPORTED_SATISFACTION is a character variable, these categories are not ordered, but they obviously should be (from "very unsat" to "very sat").  We will  therefore transform this variable into an ordinal factor, making sure that the levels are in the correct order (more on that below).
+
+Additionally, there are some mistaken values. INCOME and HOUSE both represent dollar values. Thus negative values should not be regarded merely as outliers but as errors.  HANDSET_PRICE has a max that  is unrealistically high. And OVER_15MINS_CALLS_MONTH  has three missing observations marked as `NA`.
+
+The appropriate workflow is to clean the data then explore it (though sometimes you won't know that data needs to be cleaned until you explore it, so these two steps---cleaning and exploring---are definitely non-linear and iterative).  Why clean first? Unclean data can sometimes be difficult to explore.  For example, the large value of HANDSET_PRICE tends to make the other values illegible in a histogram.  Compare the histogram of HANDSET_PRICE with and without the large value:
+
+```{r hist, echo=T, message=F, warning=F}
+
+# Histogram with large value
+ggplot(d, aes(HANDSET_PRICE)) +
+  geom_histogram() +
+  labs(title = "Distribution of HANDSET_PRICE (with large value)")
+
+# Histogram without large value
+d %>%
+  filter(HANDSET_PRICE < 1000) %>%
+  ggplot(aes(HANDSET_PRICE)) +
+  geom_histogram() +
+  labs(title = "Distribution of HANDSET_PRICE (without large value)")
+
+
+```
+
+One last thing. What is the grain of the data? Each row includes information on a customer, as indicated by the customer ID column.  But do we have only one row per customer? To answer that question we can check to see whether the number of unique or distinct IDs is equal to 5000, the number of rows in the data set.
+
+
+```{r num_customers, echo=T, message=F, warning=F}
+
+# Count the number of distinct IDs
+d %>%
+  distinct(ID) %>%
+  count
+
+```
+
+Yes, one row per customer.
+
+## Clean Data
+
+Let's summarize the issues that we would like to fix:
+
+- Qualitative variables should be turned into factors. That includes: `REPORTED_SATISFACTION`, `REPORTED_USAGE_LEVEL`, `CONSIDERING_CHANGE_OF_PLAN`, and `LEAVE`.  The former three variables should be turned into ordinal factors specifically.
+- COLLEGE has values of  `zero` and `one.`  We will change these to "no" and "yes," since there are only two values, and spelling out the numbers is weird.
+- Remove negative values of `INCOME` and `HOUSE`.
+- Remove absurd value of `HANDSET_PRICE`.
+- Remove rows with missing values (`NA`) in `OVER_15MINS_CALLS_PER_MONTH`. Dealing with missing values is sometimes a complicated problem.  In this case, because the number of missing values is small relative to the size of the dataset, it is fine to solve the problem by removing rows.
+- If our objective was modeling we would want to remove ID because it is obviously not a useful predictor of churn. For now we can leave ID in the data set.
+- I find it hard to type variable names in uppercase, so I will switch them to [snake_case](https://en.wikipedia.org/wiki/Snake_case) with all lowercase. Snake_case connects words with an underscore.
+
+Let's do this last step right now  using `clean_names()` function in the `janitor` package.
+
+```{r echo=T, message=F, warning=F}
+
+library(janitor)
+
+# Switch column names to lower case and snake_case
+d <- d %>%
+  clean_names()
+
+# Check that it worked with names() which returns column names
+names(d)
+
+```
+
+
+Notice that rather than saving this new dataset with clean names  as a different object, we simply overwrite the old object. This strategy keeps the environment uncluttered (see the upper right quadrant in RStudio  for a list of the objects in memory)  but it can create problems. For example, you may  mistakenly replace your original data set with one that  contains an error. If that happens, you can simply go back to the beginning of your code, from the point at which you downloaded the .csv source file from your working directory, and rerun everything. But: **NEVER change that source file itself!**  
+
+
+
+### Fix the factors
+
+In base R, the `factor()` function will change a character variable to a factor.  In doing so we need to specify the factor structure, otherwise R will automatically assign levels based on alphabetic order, which in this case is inappropriate and will cause problems, for example, when plotting. 
+
+
+```{r echo = T, warning=F}
+# Boxplot of Income ~ reported_satisfaction
+ggplot(d, aes(reported_satisfaction, income)) +
+  geom_boxplot() +
+  labs(title = "Income ~ reported_satisfaction")
+
+```
+
+Ideally, the categories on the x-axis would be ordered by value. To accomplish that we can use `factor()` to set the factor levels, and order them at the same time,  with the `levels` and `ordered` arguments.  The `summary()` function can be used afterwards to check that the factor structure has been successfully revised, since it will list the levels in order.
+
+
+```{r echo=T, warning=F}
+
+# Create factors
+d <- d %>%
+  mutate(reported_satisfaction = factor(reported_satisfaction,
+                                        levels = c("very_unsat","unsat","avg", "sat", "very_sat"),
+                                        ordered = T),
+         reported_usage_level = factor(reported_usage_level,
+                                       levels = c("very_little", "little", "avg", "high", "very_high"),
+                                       ordered = T),
+         considering_change_of_plan = factor(considering_change_of_plan,
+                                       levels = c("no", "never_thought", "perhaps", "considering", "actively_looking_into_it"),
+                                       ordered = T),
+         leave = factor(leave))
+
+# Check that it worked
+summary(d)
+```
+
+This looks good.  Let's look at the "Income ~ reported_satisfaction" plot again.  
+
+```{r cat_plot, exercise=T, warning=F}
+ggplot(d, aes(reported_satisfaction, income)) +
+  geom_boxplot() +
+  labs(title = "Income ~ reported_satisfaction")
+```
+
+The plot now has appropriately ordered categories on the x-axis.
+
+### Fix college
+
+Next task is to replace the existing values of the college variable with something that makes more sense.  We could use `factor_recode()` or, for a more general solution, the `ifelse()` command in base R. This latter function is useful (though it becomes unwieldy when there are large numbers of replacements).  The syntax is  `ifelse(test, yes, no)`, where:
+
+- "test"	is an object which can be coerced to logical mode.
+- "yes"	returns values for true elements of test.
+- "no" returns values for false elements of test.
+
+
+```{r echo=T, warning=F}
+
+# Transform values in college using recode_factor()
+d <- d %>%
+  mutate(college = recode_factor(college, "one" = "yes", "zero" = "no"))
+
+# Check that it worked
+glimpse(d)
+
+# Example using ifelse()
+d <- d %>%
+  mutate(college = ifelse(college == "one", "yes", "no"),
+         college = factor(college))
+
+
+```
+
+### Filter out rows with mistaken data
+
+Next, remove negative values of `income` and `house`, unrealistic values of `handset_price`, and rows with missing values in `over_15mins_calls_per_month`. But what should our threshold be for deciding whether a value of `handset_price` is too large?
+
+```{r echo=T, warning=F}
+# Look at the distribution of phone prices
+
+d %>%
+  arrange(desc(handset_price)) %>%
+  select(handset_price) %>%
+  head
+
+```
+
+We can see that there is just one unlikely value of `handset_price`, which we can remove by subsetting for values less than 1000. To remove the NAs we will use the `is.na()` function which we can reverse with `!is.na()` to pick out the non-NA values.  `is.na()` returns `TRUE` if the value is NA and `FALSE` otherwise, while `!is.na()` does the opposite. For example, consider a vector, `y`, with these values: NA, NA, 3, 4.  The code `is.na(y)` would be evaluated as `TRUE  TRUE FALSE FALSE` while the code `!is.na(y)` would be evaluated as `FALSE FALSE  TRUE  TRUE`.
+
+
+
+```{r echo=T, warning=F}
+# Remove rows with mistaken or missing values
+
+d <- d %>%
+  filter(income > 0,
+         house > 0,
+         handset_price < 1000,
+         !is.na(over_15mins_calls_per_month))
+
+# Check that it worked
+summary(d)
+
+# Check the new size of the dataset
+glimpse(d)
+```
+
+We have removed 6 rows in all and the dataset should now be clean and ready for exploration.  
+
+## Explore Data
+
+Exploratory data analysis or EDA is as much art as science.  Where you end up---the insights you generate about patterns in the data---depends on where you start and the questions you ask along the way.  Different analysts will have different exploratory paths, more or less productive, through the data.  No one path is necessarily the right one.
+
+It helps to start with a question.  After getting and cleaning the data, pose a question based on your understanding of the business problem and let that question, combined with your creativity and critical thinking, guide your data exploration.  In our case that might be something like "Which variables are associated with churn?"
+
+Before we begin, let's motivate EDA as a key stage in data analysis using a cautionary example:  Simpson's paradox.
+
+### Simpson's paradox
+
+The dataset for this example contains two continuous variables, `x` and `y`, and a factor variable, `group`.
+
+```{r echo=T, warning=F}
+# Inspect the data
+glimpse(simpsons)
+summary(simpsons)
+```
+
+Do some quick some exploration:  
+
+1. Write code for a histogram of `x`.  Don't save the histogram as an object; just print it to the screen. Here is an example:
+
+
+```{r hist_x, exercise=TRUE}
+ggplot(simpsons, aes(x)) +
+  geom_histogram() +
+  labs(title = "Histogram of x")
+```
+
+
+
+
+2. Write code for a histogram of `y`:
+
+```{r hist_y, exercise=TRUE, exercise.lines = 5}
+
+```
+
+
+```{r hist_y-hint}
+ggplot() +
+  geom_histogram() +
+  labs()
+```
+
+
+```{r hist_y-solution}
+ggplot(simpsons, aes(y)) +
+  geom_histogram() +
+  labs(title = "Histogram of y")
+```
+
+3. Write code for a scatterplot of `x` against `y`:
+
+```{r scatter, exercise=TRUE, exercise.lines = 5}
+
+```
+
+
+```{r scatter-hint}
+ggplot() +
+  geom_point() +
+  labs()
+```
+
+
+```{r scatter-solution}
+ggplot(simpsons, aes(x, y)) +
+  geom_point() +
+  labs(title = "y ~ x")
+```
+
+
+If this scatterplot was the only one we looked at we might conclude that  `x` and `y` are negatively related:  when `x` goes up `y` tends to go down, and vice versa.  But what about the `group` variable?  Let's now color the points by group membership.
+
+
+```{r echo=T}
+# Create scatterplot of x ~ y, color varying by group
+ggplot(simpsons, aes(x, y, col = group)) +
+  geom_point() +
+  labs(title = "y ~ x, color varying by group")
+```
+
+Something curious has happened: the previously negative relationship between `x` and `y` has turned positive!  That is, *within each group* `x` and `y` are now positively related:  when `x` goes up `y` also tends to go up, and vice versa.  Key point:  **it would be easy to miss these interdependencies without plotting and summarizing the data thoroughly.** 
+
+### EDA question
+
+As noted, EDA should start with a question  emerging from an understanding of the business problem. In our case, the business problem is, roughly, customer churn. The question for our EDA, then, might be something like: "which variables are associated with the churn variable?" We are less interested in relationships among predictors that we are in relationships between predictors and outcome. 
+
+### EDA
+
+We could at this point simply make plots for each variable and for each variable relationship, and mechanically survey the data.  I think it works better to be more strategic.  Notice that we have different sorts of variables:
+
+- *Demographic*:  `college`, `income`, `house`, `handset_price`.
+- *Behavioral*: `overage`, `leftover`, `over_15mins_calls_per_month`, `average_call_duration`, `reported_usage_level`.
+- *Attitudinal*: `reported_satisfaction`, `considering_change_of_plan`.
+
+How would we expect these to influence the outcome? It would be helpful at this point to talk to a subject matter expert.  But even without that guidance we can begin developing a tentative mental model---and from that a set of hypotheses  to explore---about how these variables might influence the outcome. For example:
+
+- Having more money---college educated, higher income, more expensive phone and house---makes  a customer less sensitive to the relationship between service and pricing and less likely to leave. (Incidentally, these demographic variables likely describe the same phenomenon--- wealth--- and should be correlated.)  
+
+- Heavy users will be more likely to leave because they may have experienced more service problems.
+
+- Low satisfaction leads to considering change of plan leads to leaving.
+
+Note: these are hypotheses  that we are seeking to explore--- keeping an open mind, happy to disconfirm--- with a variety of plots. 
+
+### Outcome variable
+
+Before we get started examining these hypotheses, let's look at the distribution of `leave.`  This is a binary variable so we need to compute the proportions of `STAY` and `LEAVE`, which we can do in a couple of different ways:
+
+```{r echo = T}
+# Using table() and prop.table()
+table(d$leave) %>% 
+  prop.table
+
+# Using ifelse() and mean()
+ifelse(d$leave == "STAY", 1, 0) %>% 
+  mean
+
+```
+
+Interestingly, although the discussion of this case in DSB noted that about 20% of MegaTelCo customers do not renew contracts, in this dataset the percentage is more like 50%. 
+
+### Demographic
+
+Are wealthier customers less likely to leave?
+
+Because the outcome is binary, the plot of choice for continuous predictors is the boxplot. The box represents the central tendency of the relationship, with the hinges indicating the first and third quartiles. The middle line is the median. The bigger the difference in medians between two target categories, leave and stay, the stronger predictor. However, there is obviously some judgment in interpreting the meaningfulness of the differences.
+
+Here is example code for a boxplot comparing `income` at the two levels of `leave`. 
+
+```{r income, exercise=TRUE}
+
+ggplot(d, aes(leave, income)) +
+  geom_boxplot() +
+  labs(title = "leave ~ income")
+
+```
+
+
+We can see that there is a slight difference, with higher income customers being slightly more likely to leave, surprisingly.
+
+Now look at `house`.  Create a boxplot comparing `house` at the two levels of `leave`.
+
+ 
+```{r house, exercise=TRUE, exercise.lines = 5}
+
+```
+
+```{r house-hint}
+
+ggplot() +
+  geom_boxplot() +
+  labs()
+  
+
+```
+
+```{r house-solution}
+
+ggplot(d, aes(leave, house)) +
+  geom_boxplot() +
+  labs(title = "leave ~ house")
+  
+
+```
+
+Leaving is more stronger related to house value, but in the opposite direction of income: customers with more expensive homes are more likely to stay.  This is the relationship we expected.
+
+What about `handset_price`? Create a boxplot comparing `handset_price` at the two levels of `leave`.
+
+```{r handset, exercise=TRUE, exercise.lines = 5}
+
+```
+
+```{r handset-hint}
+
+ggplot() +
+  geom_boxplot() +
+  labs()
+  
+```
+
+```{r handset-solution}
+
+ggplot(d, aes(leave, handset_price)) +
+  geom_boxplot() +
+  labs(title = "leave ~ handset_price")
+  
+```
+
+`Handset_price` does not seem to be a predictor of leaving.
+
+### Behavioral
+
+Are heavy users more likely to leave? Create a boxplot to comparing `overage` at the two levels of `leave`.
+
+```{r overage, exercise=TRUE, exercise.lines=5}
+
+  
+```
+
+
+```{r overage-hint}
+
+ggplot() +
+  geom_boxplot() +
+  labs()
+  
+```
+
+
+```{r overage-solution}
+
+ggplot(d, aes(leave, overage)) +
+  geom_boxplot() +
+  labs(title = "leave ~ overage")
+  
+```
+
+As expected, customers with overcharges were more likely to leave.  The next plots, `leave` vs. `over_15mins_calls_per_month` and `leave` vs. `average_call_duration`, should show a similar relationship.
+
+Create a boxplot to compare `over_15mins_calls_per_month` at the two levels of `leave`.
+
+```{r mins, exercise=TRUE, exercise.lines=5}
+
+
+```
+
+```{r mins-hint}
+
+ggplot() +
+  geom_boxplot() +
+  labs()
+  
+```
+
+```{r mins-solution}
+
+ggplot(d, aes(leave, over_15mins_calls_per_month)) +
+  geom_boxplot() +
+  labs(title = "leave ~ over_15mins_calls_per_month")
+  
+```
+
+Next, compare `average_call_duration` at the two levels of `leave`.
+
+
+```{r duration, exercise=TRUE,exercise.lines=5}
+
+
+```
+
+```{r duration-hint}
+
+ggplot() +
+  geom_boxplot() +
+  labs()
+  
+```
+
+```{r duration-solution}
+
+ggplot(d, aes(leave, average_call_duration)) +
+  geom_boxplot() +
+  labs(title = "leave ~ average_call_duration")
+  
+```
+
+Essentially no difference for `average_call_duration`.
+
+What about reported usage?  Since this is a categorical variable, a barplot is a good choice.   The creation of the barplot is a little tricky, however, in part because we need to do some data manipulation before creating the plot.
+
+1. There are too many categories of usage for easy comparison. Such a plot would be confusing. In order to focus on the two most important categories, where we would expect to see the biggest differences---low usage versus high usage---we need to collapse the two lowest and the two highest categories using a very handy function called `fct_collapse`.  The syntax for the function should make sense when you review the code below. 
+
+2. For accurate comparison of churn within usage categories it is often convenient to turn counts into proportions, which requires some extra calculation.  Thus, we will report the *proportion* of `STAY` vs. `LEAVE` *within each level* of usage, rather than counts.
+
+Here is the base table:
+
+```{r echo=T}
+
+d %>%
+  mutate(reported_usage_level = fct_collapse(reported_usage_level,
+                                             low = c("very_little", "little"),
+                                              avg = "avg",
+                                              high = c("high", "very_high"))) %>%
+  count(leave, reported_usage_level) 
+  
+```
+
+We could pipe this table into `ggplot` code for a barplot, as follows:
+
+```{r echo=T}
+
+d %>%
+  mutate(reported_usage_level = fct_collapse(reported_usage_level,
+                                             low = c("very_little", "little"),
+                                              avg = "avg",
+                                              high = c("high", "very_high"))) %>%
+  count(leave, reported_usage_level) %>%
+  ggplot(aes(reported_usage_level, n, fill = leave)) +
+  geom_col()
+  
+```
+
+Note: We use `geom_col()` rather than `geom_bar` because pre-calculated values are being displayed (`geom_col` is equivalent to `geom_bar(stat = "identity")`). The `fill` argument indicates that the bars should be colored by the two `leave` categories. However, the default setting in `geom_col()` is for stacked bars, which makes comparison almost impossible.  Putting the bars side-by-side, `position = "dodge"`, works better  since, perceptually, it is easier to see differences in  height than it is to see differences in area. Moreover,  in a dodged barplot the y-axis values are meaningful for each group. Here is a plot with dodged bars:
+
+```{r echo=T}
+
+d %>%
+  mutate(reported_usage_level = fct_collapse(reported_usage_level,
+                                             low = c("very_little", "little"),
+                                              avg = "avg",
+                                              high = c("high", "very_high"))) %>%
+  count(leave, reported_usage_level) %>%
+  ggplot(aes(reported_usage_level, n, fill = leave)) +
+  geom_col(position = "dodge")
+  
+```
+
+
+When counts for categories are dramatically different (as in this case) it can work better to plot proportions.  The  problem is that high frequency categories force a scale that makes it difficult to appreciate  the  relative magnitude of differences in low frequency categories.   Switching to proportions solves that problem. To get the proportion of `STAY` and `LEAVE` at each level of usage we need to divide each `n` by the sum of `n` in each usage level:
+
+```{r echo=T}
+
+d %>%
+  mutate(reported_usage_level = fct_collapse(reported_usage_level,
+                                             low = c("very_little", "little"),
+                                              avg = "avg",
+                                              high = c("high", "very_high"))) %>%
+  count(leave, reported_usage_level) %>%
+  # group_by usage to get the proportion of churn in each level
+  group_by(reported_usage_level) %>% 
+  mutate(proportion = n / sum(n)) 
+  
+```
+
+Next, we pipe this table into `ggplot` for visualization:
+
+```{r usage, exercise=TRUE,echo=T}
+
+d %>%
+  mutate(reported_usage_level = fct_collapse(reported_usage_level,
+                                             low = c("very_little", "little"),
+                                              avg = "avg",
+                                              high = c("high", "very_high"))) %>%
+  count(leave, reported_usage_level) %>%
+  group_by(reported_usage_level) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ggplot(aes(reported_usage_level, proportion, fill = leave)) +
+  geom_col(position = "dodge") +
+  labs(title = "leave ~ usage level")
+  
+```
+ 
+Now we can see that the difference between `LEAVE` and `STAY` in the average groups is is actually larger than it seemed in the earlier plot. Overall, however, there is not much difference between the groups.  Self-reported low users  were slightly more likely to stay, while average users were less likely.
+
+### Attitudinal
+
+Are  satisfied customers  more likely to stay? Are those considering a change more likely to leave? Intuitively, it seems that the answer to both should be "yes."
+ 
+These variables also are categorical, so we will use a similar strategy as above to plot the relationship with `leave`. Using the preceding examples, plot the proportion of `STAY` vs. `LEAVE` for each level of satisfaction.
+
+```{r sat, exercise=TRUE, exercise.lines=5}
+
+ 
+```
+
+
+```{r sat-hint}
+
+# d %>%
+#   mutate() %>%
+#   count %>%
+#   group_by() %>%
+#   mutate()%>%
+#   ggplot() +
+#   geom_col() +
+#   labs()
+  
+```
+
+```{r sat-solution}
+
+d %>%
+  mutate(reported_satisfaction = fct_collapse(reported_satisfaction,
+                                             low = c("very_unsat", "unsat"),
+                                              avg = "avg",
+                                              high = c("sat", "very_sat"))) %>%
+  count(leave, reported_satisfaction) %>%
+  # group_by satisfaction to calculate the proportion leaving in each level
+  group_by(reported_satisfaction) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ggplot(aes(reported_satisfaction, proportion, fill = leave)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "leave ~ satisfaction level")
+  
+```
+
+
+
+
+The slight differences observed observed here---that customers with low or average satisfaction were *less* likely to leave compared to those with high levels of reported satisfaction---is not what we expected. It seemed reasonable to expect that dissatisfied customers would be *much more* likely to leave.  This is a confounding result.
+
+Create the same sort of plot for `considering_change_of_plan`.
+
+
+```{r change, exercise=TRUE, exercise.lines = 5}
+
+```
+
+```{r change-hint}
+
+# d %>%
+#   mutate() %>%
+#   count %>%
+#   group_by() %>%
+#   mutate(proportion = n / sum(n)) %>%
+#   ggplot() +
+#   geom_col() +
+#   labs()
+#   
+```
+
+```{r change-solution}
+
+d %>%
+  mutate(considering_change_of_plan = fct_collapse(considering_change_of_plan,
+                                             no = c("no", "never_thought"),
+                                              maybe = "perhaps",
+                                              yes = c("considering", "actively_looking_into_it"))) %>%
+  count(leave, considering_change_of_plan) %>%
+  group_by(considering_change_of_plan) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ggplot(aes(considering_change_of_plan, n, fill = leave)) +
+  geom_col(position = "dodge") +
+  labs(title = "leave ~ considering_change_of_plan")
+
+
+```
+
+These differences are relatively small. Still, we observe *exactly the reverse* of the relationship that we expected: those customers considering changing  actually  leave at *lower* rates. This is very surprising!  Might this relationship vary by wealth  or usage? Any time the relationship between two variables differs by the levels of the third variable we have what is called an *interaction.*  We will use `facet_wrap` to create boxplots comparing leave and stay for different house prices at each level of `considering_change_of_plan`.
+
+
+```{r house_int, exercise=TRUE}
+
+d %>%
+  mutate(considering_change_of_plan = fct_collapse(considering_change_of_plan,
+                                             no = c("no", "never_thought"),
+                                              maybe = "perhaps",
+                                              yes = c("considering", "actively_looking_into_it"))) %>%
+  ggplot(aes(leave, house)) +
+  geom_boxplot() +
+  facet_wrap(~considering_change_of_plan) +
+  labs(title = "leave ~ house varying by considering_change_of_plan")
+  
+```
+
+Notice that the syntax for `facet_wrap()` is to specify the variable on which you would like to wrap, preceded by a tilde.
+
+Try to create a similar plot for overage:  `leave` ~ `overage` varying by `considering_change_of_plan`.
+
+```{r overage_int, exercise=TRUE, exercise.lines = 5}
+
+
+```
+
+
+```{r overage_int-hint}
+
+# d %>%
+#   mutate() %>%
+#   ggplot() +
+#   geom_boxplot() +
+#   facet_wrap() +
+#   labs()
+  
+```
+
+```{r overage_int-solution}
+
+d %>%
+  mutate(considering_change_of_plan = fct_collapse(considering_change_of_plan,
+                                             no = c("no", "never_thought"),
+                                              maybe = "perhaps",
+                                              yes = c("considering", "actively_looking_into_it"))) %>%
+  ggplot(aes(leave, overage)) +
+  geom_boxplot() +
+  facet_wrap(~considering_change_of_plan) +
+  labs(title = "leave ~ overage varying by considering_change_of_plan")
+  
+```
+
+Is there a difference in either plot?  Not really.  We see the same basic relationship at each level of the considering variable between, on the one hand, `house` and `leave`, and, on the other, `overage` and `leave`.
+
+### EDA Summary
+
+There is always more EDA to do!   In fact, because the phases in the CRISP-DM model  are  iterative and reversible, later phases in a project, such as modeling and model evaluation/deployment,  will often necessitate more EDA.  For now, let's summarize what we have learned.   In some cases our initial hypotheses were supported, in other cases not.
+
+1. Customers who were  dissatisfied  were not more likely to leave compared to those who were satisfied. Customers who were considering a change were not more likely to leave compared to those who were not considering change.  In fact, customers who were dissatisfied or were considering a change were (slightly) *more* likely to stay!
+
+2. Usage is related to leaving. Customers with overcharges or with more long calls (over 15 minutes)  tended to leave at higher rates.
+
+3. The demographic variables probably had the weakest relationship to churn. House value was positively associated with staying.
+
+Have we learned anything from this EDA exercise that might cause us to  revise our account of the business problem? Perhaps.  As we noted, it seems intuitive that higher levels of customer satisfaction should lead to higher rates of  retention. But it doesn't.  Marketing  will be designing a special offer to lure customers into renewing their contracts.  If that campaign is designed with the primary aim of increasing customer satisfaction, then it may  not  have the desired effect of improving retention. 

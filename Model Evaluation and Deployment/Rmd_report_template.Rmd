@@ -1,0 +1,70 @@
+---
+title: "R Markdown Template"
+author: "Jeff Webb"
+output: 
+  bookdown::html_document2:
+    number_sections: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = T)
+library(knitr)
+library(tidyverse)
+library(bookdown)
+```
+
+R Markdown documents can be knit to HTML, PDF or Word, and will produce typeset quality documents.  All the code chunks in the document are evaluated when you press the "knit" button.  You need to make sure that there are no errors in your chunks, since that will interrupt the process of compiling your file.  Best practice is to clear your environment and then run each code chunk individually to ensure that they work.  Then knit the document.
+
+Note:  we are using the `bookdown` package to handle the table/figure captions and cross-referencing.
+
+Include white space in your document by organizing it into sections with headers such as:
+
+# Main heading
+
+## Sub heading
+
+### sub sub heading
+
+Use bullets and lists  when possible to organize content for skimming.
+
+- bullet 1
+- bullet 2
+- bullet 3
+
+1. numbered list
+2. numbered list
+3. numbered list
+
+We can add emphasis like **this** or like *this*.
+
+Find the finer points of R Markdown with two cheat sheets that are available:  Help -> cheatsheets.
+
+We usually want to put captions and labels to the tables and figures we include in a document.  After doing so, we would also like to be able to refer to those objects using the automatically generated labels.
+
+# Example of table with caption
+
+```{r cars1, echo=T}
+summary(cars) %>% 
+  kable(caption = "Summary of cars dataset using kable")
+```
+
+We can then refer to tables using R markown's automatic numbering like this: Table \@ref(tab:cars1) summarizes the cars dataset. `cars1` is the chunk label.
+
+Note that the `echo = T` argument was added to the code chunk to print the R code that generated the plot.  We can make the code invisible with `echo = F`.
+
+```{r cars2, echo=F}
+summary(cars) %>% 
+  kable(caption = "Summary of cars dataset using kable")
+```
+
+Table \@ref(tab:cars2) was generated with hidden code.
+
+## Including Plots
+
+```{r pressure, echo = F, fig.cap="Plot of pressure.  Temperatures is on the x-axis and pressure is on the y-axis."}
+plot(pressure)
+```
+
+Figure \@ref(fig:pressure) was generated using with the R code hidden using the `echo = F` argument in the code chunk.
+
+

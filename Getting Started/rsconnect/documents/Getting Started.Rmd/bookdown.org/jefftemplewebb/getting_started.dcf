@@ -1,0 +1,13 @@
+name: getting_started
+title: Getting Started
+username: jefftemplewebb
+account: jefftemplewebb
+server: bookdown.org
+hostUrl: https://bookdown.org/__api__
+appId: 2601
+bundleId: 10249
+url: https://bookdown.org/jefftemplewebb/getting_started/
+when: 1558284817.74794
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: data_file.csv

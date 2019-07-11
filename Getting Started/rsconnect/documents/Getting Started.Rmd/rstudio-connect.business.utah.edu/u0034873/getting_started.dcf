@@ -1,0 +1,13 @@
+name: getting_started
+title: Getting Started
+username: u0034873
+account: u0034873
+server: rstudio-connect.business.utah.edu
+hostUrl: https://rstudio-connect.business.utah.edu/__api__
+appId: 15
+bundleId: 118
+url: https://rstudio-connect.business.utah.edu/content/15/
+when: 1559565954.81956
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: data_file.csv

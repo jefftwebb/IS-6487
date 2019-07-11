@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+<meta name="progressive" content="false" />
+<meta name="allow-skip" content="false" />
+
+<title>Getting Started with R and RStudio</title>
+
+
+<!-- highlightjs -->
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+</head>
+
+<body>
+
+
+
+<div class="pageContent band">
+<div class="bandContent page">
+
+<div class="topics">
+
+<div id="section-r-and-rstudio" class="section level2">
+<h2>R and RStudio</h2>
+<p>R is a free, open source statistical programming language that consists in a set of functions for doing stuff with data: manipulating it, graphing it, and calculating statistics (among other things). Further information on R is available at the <a href="https://www.r-project.org/about.html" target="_blank">R project</a> page.</p>
+<p>We will refer to the basic functions included with the version of R that you installed from CRAN as “base R.” There are also a very large number of supplementary packages that extend R’s functionality; these must be downloaded and installed separately. One of the great things about R is that the development community is extremely active and new packages implementing cutting edge techniques are being added to CRAN all the time. (As of May 2019 there are over 14,000 packages on CRAN.)</p>
+<p>RStudio is an integrated design environment (IDE) for R. R can be used by itself (and in fact many people whose workflows predate RStudio prefer to do just that) but RStudio can help improve productivity by supplying a GUI for many common tasks as well as project management and authoring tools. We will be using RStudio extensively in this course.</p>
+</div>
+<div id="section-download-and-install-r" class="section level2">
+<h2>Download and install R</h2>
+<p>Download and install R from the Comprehensive R Archive Network or <a href="https://cran.r-project.org" target="_blank">CRAN</a>. Pick the latest release for your operating system. Here are some example videos from Roger Peng that might be dated at this point but demonstrate the basic workflow:</p>
+<div id="section-r-for-windows" class="section level3">
+<h3>R for Windows</h3>
+<p><img src="http://youtu.be/Ohnk9hcxf9M" /></p>
+</div>
+<div id="section-r-for-mac" class="section level3">
+<h3>R for Mac</h3>
+<p><img src="https://youtu.be/uxuuWXU-7UQ" /></p>
+</div>
+</div>
+<div id="section-download-and-install-rstudio" class="section level2">
+<h2>Download and install RStudio</h2>
+<p>Download and install <a href="https://www.rstudio.com" target="_blank">RStudio</a>, making sure to get the desktop version. Note: <em>you must have R installed before you install RStudio</em>. Here are some example videos:</p>
+<div id="section-rstudio-for-windows" class="section level3">
+<h3>RStudio for Windows</h3>
+<p><img src="https://www.youtube.com/watch?v=8kabQuynd7A" /></p>
+</div>
+<div id="section-rstudio-for-mac" class="section level3">
+<h3>RStudio for Mac</h3>
+<p><img src="https://youtu.be/bM7Sfz-LADM" /></p>
+</div>
+</div>
+<div id="section-installing-packages" class="section level2">
+<h2>Installing Packages</h2>
+<p>When you install R, a large number of functions are automatically included. As noted, we’ll refer to these functions as “base R.” While you can perform just about any programming task by writing custom code in base R, there is no need: many additional functions have already been written and made available in R packages that you can install. One incredibly useful collection of packages is the tidyverse, which includes:</p>
+<ul>
+<li><code>dplyr</code> (for data manipulation)</li>
+<li><code>ggplot2</code> (for plotting using the “grammar of graphics”)</li>
+<li><code>tidyr</code> (for tidying data)</li>
+<li><code>lubridate</code> (for working with dates)</li>
+<li><code>stringr</code> (for manipulating text)</li>
+<li>and many others!</li>
+</ul>
+<p>The functions in these packages work well in combination and are blazingly fast. For example, the backend in <code>dplyr</code>—the tidyverse equivalent of SQL—is written in the C programming language. These packages allow you to focus on data analysis rather than complicated programming.</p>
+<p>Once you’ve installed RStudio, download and install the <code>tidyverse</code>: look for “Tools” in top menu in RStudio and select “Install packages” from the dropdown menu. Browse for the package you want to install.</p>
+<p><img src="images/install.png" style="width:100.0%" /></p>
+<p>Alternatively, you can accomplish the same thing by typing, for example, <code>install.packages(&quot;tidyverse&quot;)</code> in the console, the area in RStudio where you enter R programming commands directly. By default the console pane is in RStudio’s lower left quadrant.</p>
+<p>Note that the “Package” tab in RStudio’s plot pane (by default in the lower right quadrant) lists the packages you have installed; clicking on the highlighted package name will bring up in the “Help” tab a list of the functions included in the package (displayed above). The documentation for each function has crucial details about usage and output, along with examples. Sometimes the documentation also helpfully includes links to papers, or “vignettes,” that provide additional details on the package.</p>
+<p>In order to use a package in an R session, remember that you must load it by typing, for example, <code>library(tidyverse)</code>.</p>
+<p>There are always multiple ways of doing things in R. You could, for example, accomplish the same thing with a different function, by typing <code>require(tidyverse)</code>. To keep things simple in this course I will present, and use, when possible, just one function per task. If you have different preferred functions, feel free to use those, but be alert to possible subtle differences between functions that appear to do the same thing.</p>
+</div>
+<div id="section-super-basic-orientation-to-rstudio" class="section level2">
+<h2>Super basic orientation to RStudio</h2>
+<p>I’ve already mentioned the plot pane and the console pane. Here are more details on the spatial organization of RStudio. Some of the commands mentioned here will be unfamiliar. We will come back to these in later lessons; the purpose here is simply to introduce the spatial layout and basic functionality of RStudio.</p>
+<div id="section-environment-pane-upper-right-quadrant" class="section level3">
+<h3>Environment pane (upper right quadrant)</h3>
+<p>To work with a dataset we must first load it into R’s memory. Getting data into R can sometimes be challenging. For now, we will work with a built in dataset: type <code>data(&quot;anscombe&quot;)</code>into the console. This will load the <code>anscombe</code> dataset into memory. (This is a simulated dataset designed to illustrate the importance of doing exploratory data analysis.)</p>
+<p><img src="images/environment.png" style="width:100.0%" /></p>
+<p>The environment tab in the environment pane in the upper right quadrant shows the objects in R’s working memory:</p>
+<ul>
+<li><p><strong>Data frames</strong> or other multi-dimensional data structures listed under “Data.” Here we can see that <code>anscombe</code> is a table with 11 observations of 8 variables.</p></li>
+<li><p><strong>Vectors</strong> or atomic values under “Values.” Here we took the first column of <code>anscombe</code> to create a vector of values stored in the object <code>vector</code>.</p></li>
+<li><p><strong>Functions</strong> (none stored in the above example).</p></li>
+</ul>
+<p>Thus, at a glance, we can see the objects in R memory that are available for use.</p>
+<p>The environment pane also has a History tab that stores all the commands that have been run during an R session. This can be useful if you want to look back at what you did during a session and perhaps recover a code snippet that you failed to save.</p>
+</div>
+<div id="section-plot-pane-lower-right-quadrant" class="section level3">
+<h3>Plot pane (lower right quadrant)</h3>
+<p>The plot pane consists of 5 tabs, the most important of which are:</p>
+<ul>
+<li><p><strong>Files</strong>: shows the files in your working directory.</p></li>
+<li><p><strong>Plots</strong>: displays graphical output. Here we have created a scatterplot of car <code>anscombe$x1</code> against <code>anscombe$y1</code>. (What does the “$” mean? This is syntax that tells R to select the <code>x1</code> and <code>y1</code> columns from the <code>anscombe</code> data frame. More on this later.)</p></li>
+<li><p><strong>Packages</strong>: lists the installed packages.</p></li>
+<li><p><strong>Help</strong>: contains detailed information about packages and functions.</p></li>
+</ul>
+</div>
+<div id="section-console-pane-lower-left-quadrant" class="section level3">
+<h3>Console pane (lower left quadrant)</h3>
+<p>This is the command line. You can type R code directly here, then press “return” to run it. Or, code contained in a source file—for example, from a script file (.R) or an Rmarkdown file (.Rmd)—can be selected and run in the console using <code>control-enter.</code> Output from such code is printed directly to the console. In the above example, the script contains the command <code>head(data)</code>; when this is run <code>head(data)</code> appears in the console along with the output—the first 6 rows of <code>anscombe</code>.</p>
+<p>In the console, you can scroll up to see previous output, but there are practical limitations to what you can retrieve this way since code and output typically piles up during a session. The better way to save your work is to write a script or Rmarkdown file in the source pane. (As mentioned above the History tab in the Environment pane will save all the commands run during a session.)</p>
+</div>
+<div id="section-source-pane-upper-left-quadrant" class="section level3">
+<h3>Source pane (upper left quadrant)</h3>
+<p>The document in the above example is entitled <code>Getting Started.Rmd</code>. The source pane shows the document you are currently working on.</p>
+<p>To open a .R or .Rmd file select “File” from the toolbar and then “New File.” Pick the desired document type from the drop down menu.</p>
+<p>.R documents are script files that are, essentially, just text files. These can be shared through email, for example, and the recipient can then open and run them in a local R session. Script files are a fantastic way to work interactively—running the code in the script, observing the output, and then adjusting the code as necessary. Save the script to save your work: the script will enable you to exactly reproduce your output in a future session.</p>
+</div>
+<div id="section-getting-help" class="section level3">
+<h3>Getting help</h3>
+<p>RStudio has cheatsheets on many topics. These are one page summaries of packages or other tools that you can print and keep near your work station for reference.</p>
+<p><img src="images/help.png" style="width:100.0%" /></p>
+If you would like to learn more about a particular function, type a question mark in the console followed by the name of the function: <code>?install.packages</code>. This will bring up documentation on the function in the plot pane: its source package, arguments, details, similar functions, and examples. 
+<script type="application/shiny-prerendered" data-context="server-start">
+library(learnr)
+knitr::opts_chunk$set(echo = FALSE)
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+learnr:::register_http_handlers(session, metadata = NULL)
+</script>
+ <!--html_preserve-->
+<script type="application/shiny-prerendered" data-context="dependencies">
+{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap-3.3.5"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/cerulean.min.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["pagedtable"]},{"type":"character","attributes":{},"value":["1.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/pagedtable-1.1"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["js/pagedtable.js"]},{"type":"character","attributes":{},"value":["css/pagedtable.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["highlightjs"]},{"type":"character","attributes":{},"value":["9.12.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/highlightjs"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["highlight.js"]},{"type":"character","attributes":{},"value":["textmate.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.2.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.2.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.2.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-format"]},{"type":"character","attributes":{},"value":["0.9.2.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmarkdown/templates/tutorial/resources"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-format.js"]},{"type":"character","attributes":{},"value":["tutorial-format.css","rstudio-theme.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["font-awesome"]},{"type":"character","attributes":{},"value":["5.0.13"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/fontawesome"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["js/fontawesome-all.min.js","js/fa-v4-shims.min.js"]},{"type":"character","attributes":{},"value":["css/fa-svg-with-js.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["rmarkdown"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["localforage"]},{"type":"character","attributes":{},"value":["1.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/localforage"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["localforage.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.2.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.2.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.2.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["learnr"]},{"type":"logical","attributes":{},"value":[true]}]}]}
+</script>
+<!--/html_preserve-->
+</div>
+</div>
+
+</div> <!-- topics -->
+
+<div class="topicsContainer">
+<div class="topicsPositioner">
+<div class="band">
+<div class="bandContent topicsListContainer">
+
+<!-- begin doc-metadata -->
+<div id="doc-metadata">
+<h2 class="title toc-ignore" style="display:none;">Getting Started with R and RStudio</h2>
+</div>
+<!-- end doc-metadata -->
+
+</div> <!-- bandContent.topicsListContainer -->
+</div> <!-- band -->
+</div> <!-- topicsPositioner -->
+</div> <!-- topicsContainer -->
+
+
+</div> <!-- bandContent page -->
+</div> <!-- pageContent band -->
+
+
+
+
+<script>
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+</script>
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+
+</html>

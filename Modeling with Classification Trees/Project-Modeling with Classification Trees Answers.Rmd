@@ -1,0 +1,125 @@
+---
+title: "Project: Modeling with Classification Trees--Answer Key"
+author: ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+
+```
+
+Note:  
+
+- Change the information in the yaml header above:  title and name.
+- Make sure output is html_document.
+- Once you are finished coding, run each chunk individually to make sure there are no errors.  (If necessary fix your code.) Once your code is error-free, click "knit" on the menu above. Your document should compile to HTML, provided that you have output set to "html_document."
+- In the code chunk above ("setup") echo is set to TRUE.  This means that the code in your chunks will be displayed, along with the results, in your compiled document.
+
+## Get Data
+
+Remove product since it occurs after the outcome, and implies the outcome:  those who don't answer can't purchase.  
+
+```{r}
+d <- read_csv("adviseinvest_clean.csv")
+
+glimpse(d)
+
+
+d <- d %>%
+  select(-product) %>% 
+  mutate(female = factor(female),
+         job = factor(job),
+         rent = factor(rent),
+         own_res = factor(own_res),
+         new_car = factor(new_car),
+         mobile = factor(mobile))
+
+summary(d)
+
+```
+
+
+Here is a data dictionary:
+
+- ANSWERED: Indicator for whether the call was answered.
+- INCOME:  Annual income of customer
+- FEMALE: Indicator for whether the customer is female
+- AGE:  Age of customer
+- JOB:  Indicator for  job type.
+- NUM_DEPENDENTS:  Number of dependents.
+- RENT:  Indicator for whether customer rents
+- OWN_RES:  Indicator for whether  customer owns residence
+- NEW_CAR:  Indicator of whether the  customer owns a new car
+- CHK_ACCT: Number of checking accounts
+- SAV_ACCT: Number of savings accounts
+- NUM_ACCTS:  Total number of   other accounts
+- MOBILE:  Indicator for whether the call back number is mobile
+- PRODUCT:  Type of product purchased. (0 represents no purchase)
+
+## Model data
+
+### 1.  What is your target variable?
+
+```{r}
+d <- d %>%
+  mutate(answered = factor(ifelse(answered == 1, "yes", "no")))
+         
+```
+
+### 2.  Fit a model of the outcome using income.  What is  the accuracy be for that model?
+
+```{r}
+(first_tree_model <- rpart(answered~income, data = d))
+rpart.plot(first_tree_model)
+
+sum(predict(first_tree_model, type = "class")==d$answered)/nrow(d)
+```
+
+### 3.  What is the entropy in the tree's first terminal node, 2) income>=63270?
+
+```{r}
+-.7238*log(.7238) - .2762*log(.2762) 
+
+```
+
+### 4. Fit a tree model of the outcome using all predictors (minus product). What is the first leaf node?
+
+```{r}
+
+(tree_model <- rpart(answered ~., data = d))
+
+```
+
+### 4. Create and upload a visualization of this tree.
+
+
+```{r}
+rpart.plot(tree_model)
+```
+
+
+### 5. Create and upload a picture of a confusion matrix for this model
+
+```{r}
+table(predicted = predict(tree_model, type = "class"),
+      observed = d$answered)
+```
+
+### 6. What is the accuracy of this model?
+
+```{r}
+sum(predict(tree_model, type = "class")== d$answered)/nrow(d) #.7642
+```
+
+### 7.  Does this tree model beat the benchmark of majority class prediction?
+
+### 8. What is the top variable in terms of variable importance?
+
+```{r}
+tree_model$variable.importance #chk_acct
+```
+

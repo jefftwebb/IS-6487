@@ -1,0 +1,13 @@
+name: model_evaluation_and_deployment
+title: Model Evaluation and Deployment
+username: u0034873
+account: u0034873
+server: rstudio-connect.business.utah.edu
+hostUrl: https://rstudio-connect.business.utah.edu/__api__
+appId: 22
+bundleId: 206
+url: https://rstudio-connect.business.utah.edu/content/22/
+when: 1562876208.22486
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: adviseinvest_clean.csv|adviseinvest_dirty.csv|adviseinvest.csv|model evaluation scraps.R|Model_Evaluation_and_Deployment.html|Project-Model Evaluation and Deployment Answer Key.nb.html|Project-Model Evaluation and Deployment Answer Key.Rmd|Project-Model Evaluation and Deployment RMarkdown Template.nb.html|Project-Model Evaluation and Deployment RMarkdown Template.Rmd|Project-Model Evaluation and Deployment.nb.html|Project-Model Evaluation and Deployment.Rmd|Model Evaluation and Deployment_data/data_chunks_index.txt

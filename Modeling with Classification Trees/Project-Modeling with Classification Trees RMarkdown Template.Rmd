@@ -1,0 +1,101 @@
+---
+title: "Project: Modeling with Classification Trees--Answer Key"
+author: ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+
+```
+
+Note:  
+
+- Change the information in the yaml header above:  title and name.
+- Make sure output is html_document.
+- Once you are finished coding, run each chunk individually to make sure there are no errors.  (If necessary fix your code.) Once your code is error-free, click "knit" on the menu above. Your document should compile to HTML, provided that you have output set to "html_document."
+- In the code chunk above ("setup") echo is set to TRUE.  This means that the code in your chunks will be displayed, along with the results, in your compiled document.
+
+## Get Data
+
+Remove `product` since it occurs after the outcome, and implies the outcome:  those who don't answer can't purchase.  
+
+```{r}
+d <- read_csv("adviseinvest_clean.csv")
+
+
+```
+
+
+Here is a data dictionary:
+
+- ANSWERED: Indicator for whether the call was answered.
+- INCOME:  Annual income of customer
+- FEMALE: Indicator for whether the customer is female
+- AGE:  Age of customer
+- JOB:  Indicator for  job type.
+- NUM_DEPENDENTS:  Number of dependents.
+- RENT:  Indicator for whether customer rents
+- OWN_RES:  Indicator for whether  customer owns residence
+- NEW_CAR:  Indicator of whether the  customer owns a new car
+- CHK_ACCT: Number of checking accounts
+- SAV_ACCT: Number of savings accounts
+- NUM_ACCTS:  Total number of   other accounts
+- MOBILE:  Indicator for whether the call back number is mobile
+- PRODUCT:  Type of product purchased. (0 represents no purchase)
+
+## Model data
+
+### 1.  
+
+```{r}
+
+```
+
+### 2.  
+
+```{r}
+
+```
+
+### 3.  
+
+```{r}
+
+```
+
+### 4. 
+
+```{r}
+
+```
+
+### 5.
+
+
+```{r}
+
+```
+
+
+### 6. 
+
+```{r}
+
+```
+
+### 7. 
+
+```{r}
+
+```
+
+### 8. 
+
+```{r}
+
+```
+

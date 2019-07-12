@@ -15,7 +15,7 @@ library(magrittr)
 
 Note:  
 
-- Change the information in the yaml header above:  title and author
+- Change the information in the yaml header above:  title and author.
 - Make sure output is html_document.
 - Once you are finished coding, run each chunk individually to make sure there are no errors.  (If necessary fix your code.) Once your code is error-free, click "knit" on the menu above. Your document should compile to HTML, provided that you have output set to "html_document."
 - In the code chunk above ("setup"), echo is set to TRUE.  This means that the code in your chunks will be displayed, along with the results, in your compiled document.
@@ -23,28 +23,49 @@ Note:
 
 ## Load and Transform Data
 
+Here is a data dictionary:
+
+- ANSWERED: Indicator for whether the call was answered.
+- INCOME:  Annual income of customer
+- FEMALE: Indicator for whether the customer is female
+- AGE:  Age of customer
+- JOB:  Indicator for  job type.
+- NUM_DEPENDENTS:  Number of dependents.
+- RENT:  Indicator for whether customer rents
+- OWN_RES:  Indicator for whether  customer owns residence
+- NEW_CAR:  Indicator of whether the  customer owns a new car
+- CHK_ACCT: Number of checking accounts
+- SAV_ACCT: Number of savings accounts
+- NUM_ACCTS:  Total number of   other accounts
+- MOBILE:  Indicator for whether the call back number is mobile
+- PRODUCT:  Type of product purchased. (0 represents no purchase)
+
 
 ```{r}
+d <- read_csv("adviseinvest_clean.csv")  %>%
+  select(-answered) %>% 
+  mutate(purchased = factor(ifelse(product==0, "no","yes")),
+         female = factor(female),
+         job = factor(job),
+         rent = factor(rent),
+         own_res = factor(own_res),
+         new_car = factor(new_car),
+         mobile = factor(mobile)) %>% 
+  select(-product)
 
-```
-
-## Fit model
-
-
-```{r}
 
 ```
 
 ## Questions
 
-### Q1
+### Q1. 
 
 
 ```{r}
 
 ```
 
-### Q2
+### Q2. 
 
 ```{r}
 
@@ -68,8 +89,18 @@ Note:
 
 ### Q5
 
+```{r}
+
+```
+
 
 ### Q6
+
+```{r}
+
+```
+
+### Q7
 
 ```{r}
 

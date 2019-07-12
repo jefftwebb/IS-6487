@@ -246,7 +246,7 @@ Profit went down: 586,200.
 Notice that our profit estimates will change depending on:
 
 - *The cost matrix.* "While the probabilities can be estimated from data, the costs and benefits often cannot. They generally depend on external information provided via analysis of the consequences of decisions in the context of the specific business problem. Indeed, specifying the costs and benefits may take a great deal of time and thought. In many cases they cannot be specified exactly but only as approximate ranges" (DSB, Chapter 7).
-- *The accuracy of a given model*. The more accurate the model the fewer costs (false postives) and the more benefits (true positives), leading to higher overall profit.
+- *The accuracy of a given model*. The more accurate the model the fewer costs (false positives) and the more benefits (true positives), leading to higher overall profit.
 - *The decision threshold used to create a given confusion matrix*. The default threshold of .5 may not be ideal. In fact, we need a systematic method to decide  where to set the class decision threshold in order to maximize profit.
 
 ### Profit Curve
@@ -261,13 +261,17 @@ The x-axis in this plot represents subsets of customers arranged from highest to
 
 We will use a profit curve below.
 
-## Expected Benefit Framework
+## Expected Value Framework
 
-The expected benefit framework, while important, is unfortunately somewhat obscure and difficult to understand (especially if you are not comfortable with mathematical notation).  The first thing to recognize is that the framework is more a conceptual tool  for  refining the business problem than it is a tool for, say, calculating profit. So don't worry about figuring out how to translate this into code. 
+The expected value framework is basically a method for estimating per customer profit for an intervention such as the MegaTelCo marketing campaign. Unfortunately, the discussion in DSB is difficult to understand.  This is partly due to the complexity of the MegaTelCo case, since we must consider both the benefit of targeting and the benefit of not targeting and, moreover, compute the probability of staying and leaving in each situation.  But the difficulty is also due to the fact that we can't actually estimate those probabilities with the data we have. I will review the expected value framework for the MegaTelCo marketing campaign but then provide a simpler---and hopefully more straightforward example---using the AdviseInvest case.
+
+### Expected value framework: MegaTelCo 
+
+The first thing to recognize is that DSB treats the framework in this case as a conceptual tool  for  refining the business problem rather than as a tool for calculating profit. So don't worry about figuring out how to translate these formulas into code. I will adapt the formulation slightly to make it more straightforward by expressing the probability of leaving if targeted not as $1-p(Stay|x,T)$ but as $p(Leave|x,T)$.  The two expressions are identical.
 
 The expected benefit of targeting is:
 
-$$EB_T(x) = p(Stay|x,T)*(u_{stay}(x)-c)+[1-p(Stay|x,T)]*(u_{NotStay}(x)-c)$$
+$$EB_T(x) = p(Stay|x,T)*(u_{Stay}(x)-c)+p(Leave|x,T)*(u_{Leave}(x)-c)$$
 
 In translation, the expected benefit of targeting a customer, $EB_T(x)$, is equal to:
 
@@ -275,19 +279,40 @@ In translation, the expected benefit of targeting a customer, $EB_T(x)$, is equa
 
 *plus*
 
-2.  The probability she will  leave *if targeted* multiplied by the profit if she  leaves (minus the incentive). ($1-p(Stay|x,T)$ is the same as $p(Leave|x,T)$.)
+2.  The probability she will  leave *if targeted* multiplied by the profit if she  leaves (minus the incentive). 
 
-Notice that the probability of staying is conditional on being targeted---$p(Stay|x,T)$---yet that is information we do not have (and might be difficult to estimate). We used  the tree model  to estimate $p(Leave)$.   But this formula  requires  something different---an estimate of the probability of customer will respond to the special offer, will stay if targeted.  Who knows how likely that is. To estimate that probability we would need, for example, evidence from prior marketing campaigns. The unavailability of this data in the present case underscores the point that this is a formulation designed to help us think about the business problem, not to be used in calculating profit.  
+Notice that the probability of staying is conditional on being targeted---$p(Stay|x,T)$---yet that is information we do not have (and might be difficult to estimate). We used  the tree model  to estimate $p(Leave)$.   But this formula  requires  something different---an estimate of the probability of whether a customer will respond to the special offer, will stay if targeted.  But to estimate that probability we would need, for example, evidence from prior marketing campaigns. The unavailability of this data in the present case underscores the point that this is a formulation designed to help us think about the business problem, not to be used in an actual calculation.  
 
 Next, we examine the expected benefit of *not* targeting:
 
-$$EB_{notT}(x) = p(Stay|x,notT)*(u_{stay}(x)-c)+[1-p(Stay|x,notT)]*(u_{NotStay}(x)-c)$$
+$$EB_{notT}(x) = p(Stay|x,notT)*(u_{Stay}(x)-c)+p(Leave|x,notT)]*(u_{Leave}(x)-c)$$
 
 This has a similar interpretation to the equation above for $EB_T$. 
 
-The point of these complicated formulations is to better understand what we are trying to accomplish with the marketing campaign and how we should accomplish it---answering the question, in particular, of which customers should get the special offer. Intuitively, these will be customers for whom the value of targeting (VT), $EB_T(x) - EB_{notT}(x)$, is largest. These are customers whose probability of staying will be most impacted by the special offer and whom it will be most profitable to target: rather than leaving they stay and continue paying fees. (By contrast, a customer who was already going to stay, even without the offer, will not be profitable to target, nor will it be profitable to target a customer who would not stay, even with the offer.) DSB expresses this result as $VT=\Delta(p)∗u_{Stay}(x)−c$, the change in the probability of staying multiplied by revenue associated with staying minus the cost of the incentive.  Basically $\Delta(p)$ serves as a weight on profitability. Customers with low $\Delta(p)$ will tend to have low profitability and, conversely, customers with high $\Delta(p)$ will tend to have high profitability.
+The point of these complicated formulations is to better understand what we are trying to accomplish with the marketing campaign and how we should accomplish it---answering the question, in particular, of which customers should get the special offer. Intuitively, these will be customers for whom the value of targeting (VT), $EB_T(x) - EB_{notT}(x)$, is largest, since these are customers whose probability of staying will be most impacted by the special offer and whom it will therefore be most profitable to target: rather than leaving they stay and continue paying fees. (By contrast, a customer who was already going to stay, even without the offer, will not be profitable to target, nor will it be profitable to target a customer who would not stay, even with the offer.) DSB expresses this result as $VT=\Delta(p)∗u_{Stay}(x)−c$, the change in the probability of staying multiplied by revenue associated with staying minus the cost of the incentive.  Basically $\Delta(p)$ serves as a weight on profitability. Customers with low $\Delta(p)$ will tend to have low profitability while, conversely, customers with high $\Delta(p)$ will tend to have high profitability.
 
 In some respects this is an unsatisfying result because: (a)  we don't know what the future profit of customers will be (some might stay a year, others 10 years, with differing contract values), and (b)  we don't know how responsive individual  customers would be to an incentive (as noted above). Nevertheless, these formulations have helped us decompose, and thereby better understand, the business problem and to think harder about data requirements. Part of the report we write should include a summary of which additional data items would be required to improve model quality and the profitability of future marketing campaigns. 
+
+### Expected value framework: AdviseInvest
+
+Analyzing the AdviseInvest case using the expected value framework is more straightforward.  As a reminder: the analytic objective we identified in the AdviseInvest case was to predict whether a customer would answer a scheduled call from a sales representative. To this end, you created in the previous module a supervised classification tree model of the outcome variable, `answered` (coded `yes` or `no`). How to use this model to solve the business problem is of course an important question---should we  maximize the utilization of the current four sale representatives (as requested by the Director of Sales) or maximize overall profit?  For the sake of illustrating the expected value framework let's assume that our business objective is to maximize profit and that the proposed operational adjustment is to schedule calls with just a subset of customers---those most likely to answer.  If the decision in the MegaTelCo marketing campaign was whether to target, the parallel decision in the AdviseInvest case is whether to call.  The expected value formulation in this case is simpler, since we really only need to estimate the expected benefit of calling, $EB_{C}(x)$.  Logically, the expected financial benefit of not calling, $EB_{notC}(x)$, is 0.  Let's examine this.  The probability we use in the expected value framework is the customer action that generates a return---staying in the MegaTelCo case, purchasing in the AdviseInvest case. 
+
+$$EB_{notC}(x) = p(Purchase|x,notC)*(u_{Purchase}(x)-c)+p(NoPurchase|x,notC)*(u_{NoPurchase}(x)-c)$$
+
+Clearly, if a customer is not called then the probability of purchasing a product is 0, in which case the first term in the above formulation, $p(Purchase|x,notC)*(u_{Purchase}(x)-c)$, evaluates to 0. The probability of not purchasing if not called, $p(NoPurchase|x,notC)$, is 1, but the profit from no purchase, $(u_{NoPurchase}(x)$, is obviously 0, as is $c$, the cost of calling.  (The company expends no resources if no call is made.)  So the second term, $p(NoPurchase|x,notC)*(u_{NoPurchase}(x)-c)$, also evaluates to 0.
+
+Now we can investigate the expected benefit of calling.
+
+$$EB_{C}(x) = p(Purchase|x,C)*(u_{Purchase}(x)-c)+p(NoPurchase|x,C)*(u_{NoPurchase}(x)-c)$$
+
+We can further decompose purchasing behavior by noticing that whether the call is answered plays a role here: a customer who is called but does not answer cannot purchase. This has implications for the business validation of the modeling done in the previous module, illustrating the conceptual importance of the expected value framework. What we really want to model if the objective is to maximize profit is not `answered` but rather a different binary outcome, `purchase`.  The record of customer purchases is available in the dataset.  In this case the estimate of per customer profit, $EB_{C}(x)$, could be calculated directly:
+
+1. Turn `purchase` into a binary variable: `no` if 0 (which represents no purchase in this dataset), `yes` if not 0.
+2. Fit a classification tree model of `purchase`.
+3. Use the model to estimate $p(Purchase|x,C)$ and $p(NoPurchase|x,C)$.  (Remember that $p(NoPurchase|x,C)$ is just $1 - p(Purchase|x,C)$.)
+4. Identify a dollar amount for each customer for $u_{Purchase}(x)$ based on the type of product purchased. Clearly $u_{NoPurchase}(x)$ will be 0.
+5. Estimate the cost of calling, $c$.
+6. Plug these values into the formula for $EB_{C}(x)$.
 
 ## What Next?
 

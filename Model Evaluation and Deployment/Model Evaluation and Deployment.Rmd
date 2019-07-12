@@ -305,14 +305,14 @@ Now we can investigate the expected benefit of calling.
 
 $$EB_{C}(x) = p(Purchase|x,C)*(u_{Purchase}(x)-c)+p(NoPurchase|x,C)*(u_{NoPurchase}(x)-c)$$
 
-We can further decompose purchasing behavior by noticing that whether the call is answered plays a role here: a customer who is called but does not answer cannot purchase. This has implications for the business validation of the modeling done in the previous module, illustrating the conceptual importance of the expected value framework. What we really want to model if the objective is to maximize profit is not `answered` but rather a different binary outcome, `purchase`.  The record of customer purchases is available in the dataset.  In this case the estimate of per customer profit, $EB_{C}(x)$, could be calculated directly:
+We can further decompose purchasing behavior by noticing that whether the call is answered plays a role here: a customer who is called but does not answer cannot purchase. This has implications for the business validation of the modeling done in the previous module, illustrating the conceptual importance of the expected value framework. What we really want to model if the objective is to maximize profit is not `answered` but rather a different binary outcome, `purchase`.  The record of customer purchases is available in the dataset so in this case the estimate of per customer profit, $EB_{C}(x)$, could be calculated directly.
 
-1. Turn `purchase` into a binary variable: `no` if 0 (which represents no purchase in this dataset), `yes` if not 0.
-2. Fit a classification tree model of `purchase`.
-3. Use the model to estimate $p(Purchase|x,C)$ and $p(NoPurchase|x,C)$.  (Remember that $p(NoPurchase|x,C)$ is just $1 - p(Purchase|x,C)$.)
-4. Identify a dollar amount for each customer for $u_{Purchase}(x)$ based on the type of product purchased. Clearly $u_{NoPurchase}(x)$ will be 0.
-5. Estimate the cost of calling, $c$.
-6. Plug these values into the formula for $EB_{C}(x)$.
+<!-- 1. Turn `purchase` into a binary variable: `no` if 0 (which represents no purchase in this dataset), `yes` if not 0. -->
+<!-- 2. Fit a classification tree model of `purchase`. -->
+<!-- 3. Use the model to estimate $p(Purchase|x,C)$ and $p(NoPurchase|x,C)$.  (Remember that $p(NoPurchase|x,C)$ is just $1 - p(Purchase|x,C)$.) -->
+<!-- 4. Identify a dollar amount for each customer for $u_{Purchase}(x)$ based on the type of product purchased. Clearly $u_{NoPurchase}(x)$ will be 0. -->
+<!-- 5. Estimate the cost of calling, $c$. -->
+<!-- 6. Plug these values into the formula for $EB_{C}(x)$. -->
 
 ## What Next?
 

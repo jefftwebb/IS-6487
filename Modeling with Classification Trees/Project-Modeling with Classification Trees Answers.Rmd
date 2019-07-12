@@ -21,7 +21,7 @@ Note:
 
 ## Get Data
 
-Remove product since it occurs after the outcome, and implies the outcome:  those who don't answer can't purchase.  
+Remove product since it occurs after the outcome, and implies the outcome:  those who don't answer can't purchase. Turn outcome into a factor, and the indicator variables. 
 
 ```{r}
 d <- read_csv("adviseinvest_clean.csv")
@@ -31,7 +31,8 @@ glimpse(d)
 
 d <- d %>%
   select(-product) %>% 
-  mutate(female = factor(female),
+  mutate(answered = factor(ifelse(answered==1, "yes","no")),
+         female = factor(female),
          job = factor(job),
          rent = factor(rent),
          own_res = factor(own_res),
@@ -62,27 +63,27 @@ Here is a data dictionary:
 
 ## Model data
 
-### 1.  What is your target variable?
+### 1.  What proportion of calls were answered?
 
 ```{r}
-d <- d %>%
-  mutate(answered = factor(ifelse(answered == 1, "yes", "no")))
+table(d$answered) %>% 
+  prop.table
          
 ```
 
 ### 2.  Fit a model of the outcome using income.  What is  the accuracy be for that model?
 
 ```{r}
-(first_tree_model <- rpart(answered~income, data = d))
-rpart.plot(first_tree_model)
+(income_model <- rpart(answered~income, data = d))
 
-sum(predict(first_tree_model, type = "class")==d$answered)/nrow(d)
+
+sum(predict(income_model, type = "class")==d$answered)/nrow(d)
 ```
 
-### 3.  What is the entropy in the tree's first terminal node, 2) income>=63270?
+### 3.  What is the entropy in the income model's first terminal (leaf) node ? The node is defined as:  2) income>=39135.  (If you are not seeing this output then try turning the outcome variable into a factor.)
 
 ```{r}
--.7238*log(.7238) - .2762*log(.2762) 
+-.6425993*log(.6425993) - .3574007*log(.3574007) 
 
 ```
 
@@ -112,7 +113,7 @@ table(predicted = predict(tree_model, type = "class"),
 ### 6. What is the accuracy of this model?
 
 ```{r}
-sum(predict(tree_model, type = "class")== d$answered)/nrow(d) #.7642
+sum(predict(tree_model, type = "class")== d$answered)/nrow(d) #.81
 ```
 
 ### 7.  Does this tree model beat the benchmark of majority class prediction?

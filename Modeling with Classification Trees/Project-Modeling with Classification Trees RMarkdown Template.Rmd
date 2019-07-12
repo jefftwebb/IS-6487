@@ -72,6 +72,7 @@ d <- read_csv("adviseinvest_clean.csv")  %>%
 
 ```{r}
 
+
 ```
 
 ### Q4. 

@@ -263,13 +263,13 @@ We will use a profit curve below.
 
 ## Expected Value Framework
 
-The expected value framework is basically a method for estimating per customer profit for an intervention such as the MegaTelCo marketing campaign. Unfortunately, the discussion in DSB is difficult to understand.  This is partly due to the complexity of the MegaTelCo case, since we must consider both the benefit of targeting and the benefit of not targeting and, moreover, compute the probability of staying and leaving in each situation.  But the difficulty is also due to the fact that we can't actually estimate those probabilities with the data we have. I will review the expected value framework for the MegaTelCo marketing campaign but then provide a simpler---and hopefully more straightforward example---using the AdviseInvest case.
+The expected value framework is basically a method for estimating profit for an intervention such as the MegaTelCo marketing campaign. Unfortunately, the discussion in DSB is difficult to understand.  This is due partly to the complexity of the case and partly to the fact that we can't actually estimate from the existing data the probabilities needed for the calculation. I will review the expected value framework for the MegaTelCo marketing campaign but then provide a simpler---and hopefully more straightforward example---using the AdviseInvest case.
 
 ### Expected value framework: MegaTelCo 
 
-The first thing to recognize is that DSB treats the framework in this case as a conceptual tool  for  refining the business problem rather than as a tool for calculating profit. So don't worry about figuring out how to translate these formulas into code. I will adapt the formulation slightly to make it more straightforward by expressing the probability of leaving if targeted not as $1-p(Stay|x,T)$ but as $p(Leave|x,T)$.  The two expressions are identical.
+DSB treats the framework in this case as a conceptual tool  for decomposing and refining the business problem rather than as a tool for calculating profit. I will adapt the formulation slightly to make it more straightforward by expressing the probability of leaving if targeted not as $1-p(Stay|x,T)$ but as $p(Leave|x,T)$.  The two expressions are identical.
 
-The expected benefit of targeting is:
+The expected benefit of targeting for a particular individual with characteristics $x$ is:
 
 $$EB_T(x) = p(Stay|x,T)*(u_{Stay}(x)-c)+p(Leave|x,T)*(u_{Leave}(x)-c)$$
 
@@ -281,7 +281,7 @@ In translation, the expected benefit of targeting a customer, $EB_T(x)$, is equa
 
 2.  The probability she will  leave *if targeted* multiplied by the profit if she  leaves (minus the incentive). 
 
-Notice that the probability of staying is conditional on being targeted---$p(Stay|x,T)$---yet that is information we do not have (and might be difficult to estimate). We used  the tree model  to estimate $p(Leave)$.   But this formula  requires  something different---an estimate of the probability of whether a customer will respond to the special offer, will stay if targeted.  But to estimate that probability we would need, for example, evidence from prior marketing campaigns. The unavailability of this data in the present case underscores the point that this is a formulation designed to help us think about the business problem, not to be used in an actual calculation.  
+We used  the tree model  to estimate $p(Leave)$.   But this formula  requires  something different---an estimate of the probability of whether a customer will respond to the special offer, will stay if targeted: $p(Stay|x,T)$. To estimate this we would need evidence from prior marketing campaigns, which we don't have. The expected value framework is still useful in this case because it forces us to be clear about the exact nature of the business problem.  
 
 Next, we examine the expected benefit of *not* targeting:
 
@@ -289,30 +289,38 @@ $$EB_{notT}(x) = p(Stay|x,notT)*(u_{Stay}(x)-c)+p(Leave|x,notT)]*(u_{Leave}(x)-c
 
 This has a similar interpretation to the equation above for $EB_T$. 
 
-The point of these complicated formulations is to better understand what we are trying to accomplish with the marketing campaign and how we should accomplish it---answering the question, in particular, of which customers should get the special offer. Intuitively, these will be customers for whom the value of targeting (VT), $EB_T(x) - EB_{notT}(x)$, is largest, since these are customers whose probability of staying will be most impacted by the special offer and whom it will therefore be most profitable to target: rather than leaving they stay and continue paying fees. (By contrast, a customer who was already going to stay, even without the offer, will not be profitable to target, nor will it be profitable to target a customer who would not stay, even with the offer.) DSB expresses this result as $VT=\Delta(p)∗u_{Stay}(x)−c$, the change in the probability of staying multiplied by revenue associated with staying minus the cost of the incentive.  Basically $\Delta(p)$ serves as a weight on profitability. Customers with low $\Delta(p)$ will tend to have low profitability while, conversely, customers with high $\Delta(p)$ will tend to have high profitability.
+The point of these complicated formulations is to clearly define the business objective of the marketing campaign. Which customers should receive the special offer? We wouldn't want to target a customer who was already going to stay, even without the offer.  Now would we want to target a customer who would not stay, even with the offer.  Instead, we should target those customers whose probability of staying will be most impacted by the special offer. They have the largest value of targeting (VT), $EB_T(x) - EB_{notT}(x)$, and offer the highest return on investment for the marketing campaign: rather than leaving they stay and continue paying fees. DSB expresses this result as $VT=\Delta(p)∗u_{Stay}(x)−c$, the change in the probability of staying multiplied by revenue associated with staying minus the cost of the incentive.  Basically $\Delta(p)$ serves as a weight on revenue in the formula for $VT$: small $\Delta(p)$ decreases, while large $\Delta(p)$ increases, the impact of $u_{Stay}(x)$ in calculating profit.  
 
 In some respects this is an unsatisfying result because: (a)  we don't know what the future profit of customers will be (some might stay a year, others 10 years, with differing contract values), and (b)  we don't know how responsive individual  customers would be to an incentive (as noted above). Nevertheless, these formulations have helped us decompose, and thereby better understand, the business problem and to think harder about data requirements. Part of the report we write should include a summary of which additional data items would be required to improve model quality and the profitability of future marketing campaigns. 
 
 ### Expected value framework: AdviseInvest
 
-Analyzing the AdviseInvest case using the expected value framework is more straightforward.  As a reminder: the analytic objective we identified in the AdviseInvest case was to predict whether a customer would answer a scheduled call from a sales representative. To this end, you created in the previous module a supervised classification tree model of the outcome variable, `answered` (coded `yes` or `no`). How to use this model to solve the business problem is of course an important question---should we  maximize the utilization of the current four sale representatives (as requested by the Director of Sales) or maximize overall profit?  For the sake of illustrating the expected value framework let's assume that our business objective is to maximize profit and that the proposed operational adjustment is to schedule calls with just a subset of customers---those most likely to answer.  If the decision in the MegaTelCo marketing campaign was whether to target, the parallel decision in the AdviseInvest case is whether to call.  The expected value formulation in this case is simpler, since we really only need to estimate the expected benefit of calling, $EB_{C}(x)$.  Logically, the expected financial benefit of not calling, $EB_{notC}(x)$, is 0.  Let's examine this.  The probability we use in the expected value framework is the customer action that generates a return---staying in the MegaTelCo case, purchasing in the AdviseInvest case. 
+Analyzing the AdviseInvest case using the expected value framework is more straightforward.  As a reminder: the analytic objective we identified in the AdviseInvest case was to predict whether a customer would answer a scheduled call from a sales representative. To this end, you created in the previous module a supervised classification tree model of the outcome variable, `answered` (coded `yes` or `no`). How to use this model to solve the business problem is of course an important question---should we  maximize the utilization of the current four sale representatives (as requested by the Director of Sales) or maximize overall profit?  For the sake of illustrating the expected value framework let's assume that our business objective is to maximize profit and that the proposed operational adjustment is to schedule calls with just a subset of customers---those most likely to answer.  If the decision in the MegaTelCo marketing campaign was whether to target, the parallel decision in the AdviseInvest case is whether to call.  To use the expected value framework we need to define $EB_C(x)$ and $EB_{notC}(x)$, which requires identifying the customer action that generates a return.
+
+Hmmm.  
+
+Right away we can see that *answering* the phone is not the action we should care about, since it is possible for a customer to answer without purchasing. This would represent a cost without revenue.  If we care about profit, *purchasing* is the action we should be modeling! 
+
+This brief analysis illustrates the conceptual importance of the expected value framework. It has helped us perform business validation of the modeling we have done so far, focusing our thinking about the business problem and revealing that we need to adjust our approach.  If the objective is to maximize profit then we need a model to estimate not $p(Answered|x)$ but rather $p(Purchase|x)$. In fact, the record of customer purchases is available in the dataset so we should be able to define $EB_C(x)$ and $EB_{notC}(x)$.
+
+The expected value formulation in this case is simpler than in the MegaTelCo case, since we really only need to estimate the expected benefit of calling, $EB_{C}(x)$.  Logically, the expected financial benefit of not calling, $EB_{notC}(x)$, is 0.  Let's examine this.  
 
 $$EB_{notC}(x) = p(Purchase|x,notC)*(u_{Purchase}(x)-c)+p(NoPurchase|x,notC)*(u_{NoPurchase}(x)-c)$$
 
-Clearly, if a customer is not called then the probability of purchasing a product is 0, in which case the first term in the above formulation, $p(Purchase|x,notC)*(u_{Purchase}(x)-c)$, evaluates to 0. The probability of not purchasing if not called, $p(NoPurchase|x,notC)$, is 1, but the profit from no purchase, $(u_{NoPurchase}(x)$, is obviously 0, as is $c$, the cost of calling.  (The company expends no resources if no call is made.)  So the second term, $p(NoPurchase|x,notC)*(u_{NoPurchase}(x)-c)$, also evaluates to 0.
+Clearly, if a customer is not called then the probability of purchasing a product is 0, in which case the entire first term in the above formulation, $p(Purchase|x,notC)*(u_{Purchase}(x)-c)$, evaluates to 0. The probability of not purchasing if not called, $p(NoPurchase|x,notC)$, is 1, but the profit from no purchase, $(u_{NoPurchase}(x)$, is obviously 0, as is $c$, the cost of calling.  (The company expends no resources if no call is made.)  So the second term, $p(NoPurchase|x,notC)*(u_{NoPurchase}(x)-c)$, also evaluates to 0.
 
-Now we can investigate the expected benefit of calling.
+That leaves the expected benefit of calling to analyze.
 
 $$EB_{C}(x) = p(Purchase|x,C)*(u_{Purchase}(x)-c)+p(NoPurchase|x,C)*(u_{NoPurchase}(x)-c)$$
 
-We can further decompose purchasing behavior by noticing that whether the call is answered plays a role here: a customer who is called but does not answer cannot purchase. This has implications for the business validation of the modeling done in the previous module, illustrating the conceptual importance of the expected value framework. What we really want to model if the objective is to maximize profit is not `answered` but rather a different binary outcome, `purchase`.  The record of customer purchases is available in the dataset so in this case the estimate of per customer profit, $EB_{C}(x)$, could be calculated directly.
+As noted, the data contains a record of customer purchases, `product`, which could be converted into a binary outcome variable: `purchase`.  Per customer profit, $EB_{C}(x)$, could then be calculated directly using a model of `purchase` to estimate $p(Purchase|x,C)$ and $p(NoPurchase|x,C)$, and plugging in quantities for $u_{Purchase}(x)$ and $c$. The process wold be something like this:
 
-<!-- 1. Turn `purchase` into a binary variable: `no` if 0 (which represents no purchase in this dataset), `yes` if not 0. -->
-<!-- 2. Fit a classification tree model of `purchase`. -->
-<!-- 3. Use the model to estimate $p(Purchase|x,C)$ and $p(NoPurchase|x,C)$.  (Remember that $p(NoPurchase|x,C)$ is just $1 - p(Purchase|x,C)$.) -->
-<!-- 4. Identify a dollar amount for each customer for $u_{Purchase}(x)$ based on the type of product purchased. Clearly $u_{NoPurchase}(x)$ will be 0. -->
-<!-- 5. Estimate the cost of calling, $c$. -->
-<!-- 6. Plug these values into the formula for $EB_{C}(x)$. -->
+1. Turn `purchase` into a binary variable: `no` if `0` (which represents no purchase in this dataset), `yes` otherwise.
+2. Fit a classification tree model of `purchase`.
+3. Use the model to estimate $p(Purchase|x,C)$ and $p(NoPurchase|x,C)$.  
+4. Identify a dollar amount for each customer for $u_{Purchase}(x)$ based on the type of product purchased. Clearly $u_{NoPurchase}(x)$ will be 0.
+5. Estimate the cost of calling, $c$.
+6. Plug these values into the formula for $EB_{C}(x)$.
 
 ## What Next?
 
@@ -437,7 +445,7 @@ In sum, this profit curve illustrates that you can be confident in your recommen
 
 ## How to Structure the Incentive?
 
-Of course, one of our initial assumptions is dubious: not everyone who receives the special offer will respond by renewing the contract.  Therefore, we should think about how to structure the incentive to make it as appealing as possible to customers likely to churn.  To this end variable importance from the tree model can provide helpful guidance. Why are customers leaving? We saw from EDA, as well as from  the tree model, that customer satisfaction had very little impact on  customer churn.   What about the other predictors that showed a large impact?
+Of course, one of our initial assumptions was dubious: not everyone who receives the special offer will respond by renewing the contract.  Therefore, we should think about how to structure the incentive to make it as appealing as possible to customers likely to churn.  To this end variable importance from the tree model can provide helpful guidance. Why are customers leaving? We saw from EDA, as well as from  the tree model, that customer satisfaction had very little impact on  customer churn.   What about the other predictors that showed a large impact?
  
 ```{r echo=TRUE}
 

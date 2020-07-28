@@ -1,0 +1,162 @@
+---
+title: "Project: Model Evaluation and Deployment"
+author: " "
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rpart)
+
+```
+
+Note:  
+
+- Change the information in the yaml header above:  title and author.
+- Make sure output is html_document.
+- Once you are finished coding, run each chunk individually to make sure there are no errors.  (If necessary fix your code.) Once your code is error-free, click "knit" on the menu above. Your document should compile to HTML, provided that you have output set to "html_document."
+- In the code chunk above ("setup") echo is set to TRUE.  This means that the code in your chunks will be displayed, along with the results, in your compiled document.
+
+## Load and Transform Data
+
+Here is a data dictionary for the AdviseInvest data:
+
+- ANSWERED: Indicator for whether the call was answered.
+- INCOME:  Annual income of customer
+- FEMALE: Indicator for whether the customer is female
+- AGE:  Age of customer
+- JOB:  Indicator for  job type.
+- NUM_DEPENDENTS:  Number of dependents.
+- RENT:  Indicator for whether customer rents
+- OWN_RES:  Indicator for whether  customer owns residence
+- NEW_CAR:  Indicator of whether the  customer owns a new car
+- CHK_ACCT: Number of checking accounts
+- SAV_ACCT: Number of savings accounts
+- NUM_ACCTS:  Total number of   other accounts
+- MOBILE:  Indicator for whether the call back number is mobile
+- PRODUCT:  Type of product purchased. (0 represents no purchase)
+
+Here is code to load the AdviseInvest data from your working directory, and then clean and prepare it.
+
+```{r}
+advise_invest <- read_csv("adviseinvest_clean.csv")  %>%
+  select(-product) %>% 
+  mutate(answered = factor(ifelse(answered==0, "no","yes"), 
+                           levels = c("yes", "no")),
+         female = factor(female),
+         job = factor(job),
+         rent = factor(rent),
+         own_res = factor(own_res),
+         new_car = factor(new_car),
+         mobile = factor(mobile)) 
+
+glimpse(advise_invest)
+
+```
+
+And here is code to load the dataset of prospective customers from your working directory.
+
+```{r}
+prospective <- read_csv("customer_data.csv")
+
+glimpse(prospective)
+```
+
+
+## Questions
+
+One of the simplifying assumptions we will make in this project is that all the customers who answer the phone will purchase a product. (This assumption is actually verified by the data.) To model `answered` in this case is therefore equivalent to modeling purchased.
+
+There are costs and benefits in this case. We will assume that customers purchase a product for \$100 dollars. The agent time to make the sale is worth \$25. Profit is \$75 dollars for an answered call and a purchase. In sum:
+
+**Benefit**: True positive. The customer is predicted to answer, does answer, and purchases a product for \$100 for a profit of 100 - 25 = \$75.
+
+**Cost**: False positive. The customer is predicted to answer, but does not answer, so there is a loss of \$25. (We assume the agent cannot schedule another call at the last minute, or spends the entire time slot trying to make the call.)
+
+Customers who are not predicted to answer will not be called, so there are no benefits and no costs.
+
+### Q1. 
+
+Fit a tree model of `answered` using all the available predictors. This is the model from the previous project; you are welcome to cut and paste your code.  As instructed there, do not use `product` as a predictor, and make sure to change the indicators and the outcome into factors.
+
+Create a confusion matrix for this model, using the `predict()` function with the `type = "class"` argument. (The default probability threshold used by the function is .5.)
+
+1. What is the number of true positives?
+2. What is the number of false positives?
+3. What is the number of true negatives?
+4. What is the number of false negatives?
+
+```{r}
+
+```
+
+
+### Q2
+
+Using the confusion matrix in the previous question how much profit (revenue - costs) could be expected with these costs and benefits? To do the calculation use the cost-benefit matrix defined in the following chunk:
+
+
+```{r}
+
+(cost_benefit <-  matrix(c(75, 0, -25, 0), ncol = 2,
+                         dimnames = list(c("predicted yes", "no"), 
+                                         c("observed yes","no"))))
+
+```
+
+Hint: multiply the values in the confusion matrix cells by the the cost-benefit matrix cells. Careful: profit should not be negative! Make sure that you have correctly identified the true positives and the false positives in your confusion matrix. It might be easiest to calculate profit by hand, or at least double check to make sure you are multiplying the correct cells in the confusion matrix by the correct cells in the cost-benefit matrix.
+
+### Q3
+
+How much profit (revenue - costs) could be expected if all customers were called?
+
+```{r}
+
+```
+
+### Q4
+
+The class decision threshold with maximum expected profit is .2. How much profit (revenue - costs) would we expect with this threshold?
+
+Hint: use the cost-benefit matrix provided above, but create a new confusion matrix using `predict()` with the `type = "prob"` argument. You will need to convert the resulting probabilities into class labels using the threshold of .2.  In other words, if the model-predicted probability of answering is greater than or equal to .2, then assign a label of "yes." Again, make sure that you have correctly identified the true positives and the false positives in your confusion matrix and that you are multiplying these by the correct cells in the cost-benefit matrix.
+
+```{r}
+
+
+```
+
+### Q5
+
+The second data set for this assignment (loaded above as "prospective") contains observations for prospective customers. There is no target variable in this dataset because these customers have not yet been called. 
+
+Steps: 
+
+1. Use the supervised model you created for the first question to predict a probability of answering for each prospective customer. 
+
+2. Assign a predicted class label of "yes" to every customer whose model-estimated probability of answering that is .2 or greater. (This is the optimal class decision threshold.) 
+
+3. Filter the dataset to contain only prospective customers with a predicted class label of "yes." This is your contact list. 
+
+How many customers are on the list?
+
+
+```{r}
+
+```
+
+
+### Q6
+
+Develop some recommendations for the client, the Director of Sales at AdviseInvest. What, concretely, would you recommend that AdviseInvest do? How should your analytical results be operationalized?
+
+Write a paragraph or two in which you clearly describe and then argue for your recommendations. You will be graded on the extent to which you are able to:
+
+- Describe the business problem and persuasively present your results as a solution, discussing the details of how your predictive modeling results would be used/implemented by the Director of Sales to improve operations.
+
+- Write clearly and compellingly without mistakes (such as spelling errors) and without relying on jargon. The Director of Sales is knowledgeable about analytics but is not an expert statistician. You should therefore clearly explain terms such as (but not limited to): classification tree model, customer segmentation, accuracy, true positives, false positives, cost-benefit matrix, confusion matrix, class labels, probability.
+
+Feel free to produce additional analytics if you think it would help you make your case.
+
+
+

@@ -12,6 +12,11 @@ library(tidyverse)
 library(magrittr)
 knitr::opts_chunk$set(echo = FALSE)
 
+EV <- data.frame(threshold = c(0, .1, .2, .3, .4 , .5, .6, .7, .8, .9),
+                     profit = NA) %>% 
+  distinct(threshold, profit) %>% 
+  arrange(threshold)
+
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -31,7 +36,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Introduction
 
-A key challenge  in an analytics project after creating a model is to figure out what to do with it.  How will we use it to solve the business problem?  What should we recommend the business do?  In asking these questions we have moved from the domain of predictive analytics--- the subject of the last module---to the domain of *prescriptive* analytics,  which is focused on making (to quote DSB) "actionable recommendations based on a data analytic model about what the decision-maker should do to achieve a particular objective." This prescriptive aim *roughly* lines up with the final phases of the CRISP-DM analytics process, Model Evaluation and Model Deployment. I say "roughly" because prescriptive analytics could take place during the CRISP-DM Modeling phase and because deployment can mean a variety of things in analytics projects.  A model might be deployed by writing a report explaining a key relationship  in the data and recommending a course of action, which is clearly prescriptive.  Or it might be deployed by being put into production---for example,  implementing a model to automatically forecast a KPI. This is not clearly prescriptive.  Nevertheless, I would argue that a key feature of any analytics solution should include a prescriptive component, a recommendation for how the analytic results should be used---which course of action, out of the many available, should be taken.  
+A key challenge  in an analytics project after creating a model is to figure out what to do with it.  How will we use it to solve the business problem?  What should we recommend the business do?  In asking these questions we have moved from the domain of predictive analytics---the subject of the last module---to the domain of *prescriptive* analytics,  which is focused on making (to quote DSB) "actionable recommendations based on a data analytic model about what the decision-maker should do to achieve a particular objective." This prescriptive aim *roughly* lines up with the final phases of the CRISP-DM analytics process, Model Evaluation and Model Deployment. I say "roughly" because prescriptive analytics could take place during the CRISP-DM Modeling phase and because deployment can mean a variety of things in analytics projects.  A model might be deployed by writing a report explaining a key relationship  in the data and recommending a course of action, which is clearly prescriptive.  Or it might be deployed by being put into production---for example,  implementing a model to automatically forecast a KPI. This is not clearly prescriptive.  Nevertheless, most analytic solutions should include a prescriptive component, a recommendation for how the results should be used---which course of action, out of the many available, should be taken.  
 
 <!-- Prescriptive analytics is often discussed narrowly as model-based optimization:  using outputs from a predictive model as inputs to a secondary model of a quantity to be maximized, such as profit. But I think prescriptive analytics can be usefully regarded more broadly as any use of quantitative results to make a recommendation.  -->
 
@@ -39,12 +44,14 @@ Consequently, *translation* and *persuasion* are key activities in these later p
 
 This tutorial will walk you through that process. 
 
-## Preparation
+The dataset and models developed in previous tutorials have already been loaded.
 
-Here is the consolidated code developed in the last tutorial for cleaning the data, fitting a tree model using all predictors, and computing performance metrics.
+<!-- ## Preparation  -->
+
+<!-- Here is the consolidated code developed in the last tutorial for cleaning the data, fitting a tree model using all predictors, and computing performance metrics. -->
 
 
-```{r, echo = T, message=FALSE, warning=FALSE}
+```{r, include = F, message=FALSE, warning=FALSE}
 
 # Load packages
 library(tidyverse)
@@ -54,72 +61,140 @@ library(rpart.plot)
 
 
 # Import and clean data
-d <- read_csv("megatelco.csv") %>%
+library(tidyverse)
+library(janitor)
+m_clean <- read_csv("megatelco.csv") %>%
   clean_names() %>% 
-  mutate(reported_satisfaction = factor(reported_satisfaction,
-                                        levels = c("very_unsat","unsat","avg", "sat", "very_sat"),
+  mutate(reported_usage_level = fct_collapse(reported_usage_level,
+                                             low = c("very_little", "little"),
+                                              avg = "avg",
+                                              high = c("high", "very_high")),
+         reported_usage_level = as.character(reported_usage_level),
+         reported_satisfaction = fct_collapse(reported_satisfaction,
+                                             low = c("very_unsat", "unsat"),
+                                              avg = "avg",
+                                              high = c("sat", "very_sat")),
+         reported_satisfaction = as.character(reported_satisfaction),
+         considering_change_of_plan = fct_collapse(considering_change_of_plan,
+                                             no = c("no", "never_thought"),
+                                              maybe = "perhaps",
+                                              yes = c("considering", "actively_looking_into_it")),
+         considering_change_of_plan = as.character(considering_change_of_plan),
+         reported_satisfaction = factor(reported_satisfaction,
+                                        levels = c("low","avg", "high"),
                                         ordered = T),
          reported_usage_level = factor(reported_usage_level,
-                                       levels = c("very_little", "little", "avg", "high", "very_high"),
+                                       levels = c("low",  "avg", "high"),
                                        ordered = T),
          considering_change_of_plan = factor(considering_change_of_plan,
-                                       levels = c("no", "never_thought", "perhaps", "considering", "actively_looking_into_it"),
+                                       levels = c("no", "maybe", "yes"),
                                        ordered = T),
          leave = factor(leave),
-         college = recode_factor(college, "one" = "yes", "zero" = "no")) %>% 
+         college = ifelse(college == "one", "yes", "no")) %>% 
   filter(income > 0,
-         house > 0,
-         handset_price < 1000,
-         !is.na(over_15mins_calls_per_month)) 
-
+       house > 0,
+       handset_price < 1000,
+       !is.na(over_15mins_calls_per_month))
 
 # Fit tree
-(tree_model <- rpart(leave ~ ., data = select(d, -id)))
-
-# Confusion matrix
-table(predicted = predict(tree_model, type = "class"),
-      observed = d$leave) 
+(tree_model <- rpart(leave ~ ., data = select(m_clean, -id)))
 
 # Accuracy
-sum(d$leave == predict(tree_model, type = "class")) / nrow(d)
+(m_clean$leave == predict(tree_model, type = "class")) %>% 
+    mean
 
+set.seed(123)
+current_customers <- m_clean %>% 
+  sample_n(size = 2000) %>% 
+  mutate(id = sample(seq(20000, 30000, by = 1), 2000)) %>% 
+  select(-leave)
 
+predictions <- current_customers %>% 
+  select(id) %>% 
+  mutate(churn_prob = predict(tree_model, newdata = current_customers, type = "prob")[,1])
+
+contact_list <- predictions %>% 
+  filter(churn_prob >= .2)
 ```
 
 ## Business Validation
 
-In the last tutorial, we evaluated the tree model using accuracy, a simple classifier performance metric.  But while accuracy allows us to compare models--- for example, the tree model with all the predictors is better than the one with just `house`---it can't answer the  larger, and more important, question of whether this model performance suffices for solving the business problem. At this point we need to do business validation of the model and approach, by checking to make sure that the analytic work we've done solves the initial business problem. It is not untypical for a project to drift, such that the solution no longer fits the problem.  Or, sometimes, we need to redefine the problem in light of the available data and analytics.
+In the last tutorial, we evaluated our tree model using accuracy, a simple classifier performance metric.  Accuracy allows us to compare models--- for example, we found that the tree model with all the predictors is better than the one with just `house`---but it can't answer other important questions, such as: How exactly should the model results be used to solve the business problem?  
 
-So what was the problem? DSB  re-describes it in Chapter 11.
+The model evaluation phase of a project is when we take a step back and do business validation of a model by asking these sorts of questions. Additional metrics, such as a confusion matrix, and additional approaches, such as the expected value framework, will help us assess whether---and how---the analytic work we've done solves the business problem.
 
-> Why is churn a problem? Because it causes us to lose money. The real business problem is losing money. If a customer actually were costly to us rather than profitable we may not mind losing her. We would like to limit the amount of money we are losing--- not simply to keep the most customers. Therefore, we want to take the value of the customer into account. Our expected value framework helps us to frame that analysis. (284)
+<!-- So what was the problem? DSB  re-describes it in Chapter 11. -->
 
-The business problem is not churn but the amount of money  the company is losing  due to churn.  We will discuss the expected value framework but will first review probability and model evaluation using the profit metric.
+<!-- > Why is churn a problem? Because it causes us to lose money. The real business problem is losing money. If a customer actually were costly to us rather than profitable we may not mind losing her. We would like to limit the amount of money we are losing--- not simply to keep the most customers. Therefore, we want to take the value of the customer into account. Our expected value framework helps us to frame that analysis. (284) -->
+
+<!-- The business problem is not churn but the amount of money  the company is losing  due to churn.  We will discuss the expected value framework but will first review probability and model evaluation using the profit metric. -->
+
+## Confusion Matrix
+
+Accuracy is the proportion of correct model predictions of a categorical outcome. We can summarize the results of any classification model even more precisely using a confusion matrix, so named because it shows where the model is confused, tallying how many times the model correctly or incorrectly predicts the event happening (in this case the "event" we are interested in predicting is `LEAVE`) and how many times it correctly or incorrectly predicts the event not happening (`STAY`). Notice that there are four possibilities here:
+
+- predict event correctly, known as a "true positive" (TP)
+- predict event incorrectly, known as a "false positive" (FP)
+- predict no event correctly, known as a "true negative" (TN)
+- predict no event incorrectly, known as a "false negative" (FN)
+
+The four possibilities fit into a 2 x 2 matrix:
+
+```{r}
+cm <- table(predicted = m_clean$leave,
+      observed = rep(c("LEAVE","STAY"), nrow(m_clean)/2))
+
+cm[1,1] <- "TP"
+cm[2,1] <- "FN"
+cm[1,2] <- "FP"
+cm[2,2] <- "TN"
+
+cm
+```
+
+Here are the actual numbers from the tree model:
+
+```{r cm, exercise = T}
+# Confusion matrix
+table(predicted = predict(tree_model, type = "class"),
+      observed = m_clean$leave)
 
 
+```
+
+How to read this?  As indicated by the labels, the model's predictions are in the rows of the confusion matrix, and the observed values from the data are in the columns. The matrix allow us to see what sort of errors the model is making.
+
+- TP: 1930 cases in which the model correctly predicted `LEAVE`
+- FP: 919 cases in which the model incorrectly predicted `LEAVE`
+- FN: 538 cases in which the model incorrectly predicted `STAY`
+- TN: 1607cases in which the model correctly predicted `STAY`
+
+Notice that we can obtain accuracy from the confusion matrix also by summing the diagonal from upper left to lower right and dividing by the total:  $Acc = \frac{\sum TP + \sum TN}{\sum Total Pop}$ = (1930 + 1607)/ (1930 + 1607 + 538 + 919) = .71.
+
+(There are many additional metrics described at the end of DSB, Chapter 7 that can be calculated from the confusion matrix.  We won't go into them now.)
+
+To improve this model we would need to boost the accuracy either by increasing the number of true positives or the number of true negatives, or both. 
 
 ## Probability
 
-In the tutorial for the last module we used a tree model of `leave`  to predict a class label: `STAY` or `LEAVE.` The predicted class label was defined as the majority class in each leaf node of the tree. So, for example, if the majority of customers in a node---say, 6 out of 10---had an observed outcome of `STAY`  then the model would predict `STAY` for those customers and for future similar customers. But it would be easy enough to translate 6/10 into a *probability* rather than a class label. The probability in this case would be a rate derived from the counts in that leaf node: 6/10 represents a probability of .6 that customers in that node would stay.  In this sense, probability is simply an observed rate of  event occurrence in historical data. It can be thought of as a proportion representing that rate, a number ranging between 0 and 1, with 0  indicating the impossibility of the event (never observed) and 1 indicating the certainty of the event (always observed). A probability of .5 represents uncertainty---a coin toss. Translating counts into probabilities in this way makes a tree classification model more flexible and powerful.
+In the tutorial for the last module we used a tree model of `leave`  to predict a class label: `STAY` or `LEAVE.` The predicted class label there was defined by default as the majority class in each leaf node of the tree. So, for example, if the majority of customers in a node---say, 6 out of 10, or, equivalently, a proportion greater than .5---had an observed outcome of `STAY`  then the model would predict `STAY` for those customers and for future similar customers. But it would be easy enough to translate 6/10 into a *probability* rather than a class label. The probability in this case would be a rate derived from the counts in that leaf node: 6/10 represents a probability of .6 that customers in that node would stay.  
+
+In this sense, probability is simply *an observed rate of  event occurrence in historical data*. It can be thought of as a proportion representing that rate, a number ranging between 0 and 1, with 0  indicating the impossibility of the event (never observed) and 1 indicating the certainty of the event (always observed). A probability of .5 represents an equal chance of either outcome---a coin toss. 
+
+Translating counts into probabilities makes a tree classification model more flexible and powerful, in two ways:
+
+1.  We can use model-generated probabilities to "score" or rank customers based on their likelihood of churning.
+
+2. We can adjust the probability threshold used for assigning a class label.  
+
+As described above, we previously used the default probability threshold of .5---the majority---to predict a class label.  But it is possible---indeed, given business considerations, is often preferable---to adjust that threshold, which we'll call the *class decision threshold.*
 
 
+## Class Decision Threshold
 
-<!-- When working with small samples  probabilities of 0 and 1  tend to occur by chance, when in reality probabilities are really never 0 or 1. To avoid this unrealistic result, we use what is known as the Laplace correction: -->
+The majority class in a tree model leaf node represents the proportion of observations greater than .5.  When we use a tree model to predict a class label using default settings (`type = "class"`) we are implicitly using a probability threshold, or class decision threshold, of .5.  But there is nothing magic about the .5 class decision threshold for assigning a class label.  We could easily have used a different threshold, and using different thresholds produces different sorts of model errors in the resulting confusion matrices.  
 
-<!-- $$p(c) = \frac{n + 1}{n+m+2}$$ -->
-<!-- where $n$ is the number of examples in the leaf belonging to class $c$, and $m$ is the number of examples not belonging to class $c$. -->
-
-### Predicting probabilities
-
-In the last module we used the`predict()` function to extract predicted class labels from the model.  For example:
-
-```{r predict, exercise=TRUE}
-#Predict class label
-predict(tree_model, type = "class") %>%
-  head
-```
-
-However, we can easily obtain a *probability* for leaving or staying, calculated as described above, by changing the `type` argument to "prob":
+We can easily obtain a *probability* for leaving or staying, calculated as described above, by changing the `type` argument for `predict()` from "class" to "prob":
 
 ```{r predict-prob1, exercise=TRUE}
 # Predict probability -- produces two columns
@@ -129,70 +204,49 @@ predict(tree_model, type = "prob") %>%
 
 Notice that some of the probabilities seem to be repeated (for example, observations 3-5) and that the probability of `LEAVE`  (in column 1) plus the probability of `STAY` (in column 2) always equals 1. 
 
-1. Probabilities are repeated because if observations wind up in the same leaf node they share the same rate of event occurrence.
+1. Probabilities are repeated since some observations wind up in the same leaf node and consequently share the same rate of event occurrence.
 
 2. Staying and leaving are mutually exclusive events since for a given customer one or the other  *must* occur. Thus $p(STAY) + p(LEAVE) = 1$, which means that $p(STAY) = 1 - p(LEAVE)$ and $p(LEAVE) = 1- p(STAY)$.
 
 
-Formally, when using a model to estimate the probability of staying (or leaving) we are actually estimating that probability given some predictors, with this notation:  $p(STAY | X)$.  This can be read as: the probability of staying given or *conditional upon* (that is what "|" means) a set of predictors, $X$.  
+We would use square bracket notation, `[ , ]`, to index the first column specifically, in order to extract the probability for `LEAVE`:
 
-## Confusion Matrix 
-
-Recall that the confusion matrix summarizes model performance by tallying instances where the predictions are correct---true positives (TP)  and true negatives (TN)---and instances where the predictions are incorrect---false positives (FP) and false negatives (FN):
-
-```{r}
-
-cm <- table(predicted = d$leave,
-      observed = predict(tree_model, type = "class"))
-
-cm[1,1] <- "TP"
-cm[2,1] <- "FN"
-cm[1,2] <- "FP"
-cm[2,2] <- "TN"
-
-cm 
+```{r predict-prob2, exercise=TRUE}
+predict(tree_model, type = "prob")[,1] %>%
+  head
 ```
 
 
-Here is the confusion matrix with actual counts:
+Formally, when using a model to estimate the probability of staying (or leaving) we are actually estimating a *conditional* probability, expressed with this notation:  $p(STAY | X)$.  This can be read as: the probability of staying given or *conditional upon* (that is what "|" means) a set of predictors, $X$.  
 
-
-```{r tab, exercise = T}
-
-table(predicted = d$leave,
-      observed = predict(tree_model, type = "class"))
-
-```
-
-The tree uses the majority class in a given leaf node to model observations in that node. The majority represents a proportion of observations greater than .5, and this proportion, as we've noted, is the estimated probability for the node.  When we use a tree model to predict a class label (`type = "class"`), as here, we are implicitly using a probability threshold, or class decision threshold, of .5.  But there is nothing magic about the .5 class decision threshold for classifying observations.  We could easily have used a different threshold, and using different thresholds produces different sorts of model errors in the resulting confusion matrices.  
-
-First, notice that we can obtain exactly the same confusion matrix as the one above by using a class decision threshold of .5 as the class cutoff. The code says:  if the predicted probability is greater than .5 then predict `LEAVE`, otherwise predict `STAY`.
+Notice that we can obtain exactly the same confusion matrix as the one above by using a class decision threshold of .5. The following code says:  if the predicted probability of leaving is greater than .5 then predict `LEAVE`, otherwise predict `STAY`.
 
 ```{r tab2, exercise = T}
 
 table(predicted = ifelse(predict(tree_model, type = "prob")[,1] > .5, "LEAVE", "STAY"),
-      observed = d$leave)
-
+      observed = m_clean$leave)
 
 ```
 
-What would happen if we used a threshold of, say, .7? This would make it harder for a leaf node to receive a class label of `LEAVE` since in this case 7 out of 10 observations in a leaf node would need to be `LEAVE`, rather than 6 out of 10. The model's predictions of `LEAVE` should therefore go down.
+
+What would happen if we used a threshold of, say, .7? This would make it harder for a leaf node to receive a class label of `LEAVE` since for a node with 10 observations more than 7 rather than more than 5 would need to be `LEAVE` to be assigned that label. The model's predictions of `LEAVE` should therefore go down, and the predictions of `STAY` would go up.
 
 ```{r tab3, exercise = T}
 table(predicted = ifelse(predict(tree_model, type = "prob")[,1] > .7, "LEAVE", "STAY"),
-      observed = d$leave)
+      observed = m_clean$leave)
 
 ```
 
-And they do.  This illustrates a general point. We can manipulate the class decision threshold to change the *sorts* of errors a model makes.  Business validation of a model often involves setting the threshold in a way that, for a particular business problem, maximizes benefits and minimizes costs.
+And they do.  This illustrates a general point. We can manipulate the class decision threshold to change the predicted class labels and the *sorts* of errors a model makes.  Business validation of a model often involves setting the threshold in a way that maximizes benefits and minimizes costs in the context of a particular business problem.
 
-## Profit
 
-Let's get specific about costs and benefits in the MegaTelCo case by supposing that, for purposes of illustration, the incentive proposed by Marketing will cost the company 200 dollars and that retained customers will produce additional revenue of 800 dollars in the next year relative to customers who churn. They produce no revenue.  (The additional revenue for retained customers would be a guess, of course.  Customers likely have different plans, and the data does not include that information.)  Profit for retained customers would thus be 800 - 200 = 600 dollars.  Here is the cost-benefit matrix:
+## Costs and Benefits
+
+Let's get specific about costs and benefits in the MegaTelCo case by supposing that, for purposes of illustration, the incentive proposed by Marketing will cost the company 200 dollars and that retained customers will produce additional revenue of 800 dollars in the next year relative to customers who churn, and, consequently, generate no revenue.   (The additional revenue for retained customers would be a guess, of course.  Customers likely have different plans, and the data does not include that information.) Profit for retained customers would thus be 800 - 200 = 600 dollars.  Profit for customers who churn would be negative: 0 - 200 = -200 dollars.  Here is the **cost-benefit matrix**:
 
 ```{r}
 
-cb <- table(predicted = d$leave,
+cb <- table(predicted = m_clean$leave,
       observed = predict(tree_model, type = "class"))
 
 cb[1,1] <- 600
@@ -205,24 +259,26 @@ cost_benefit <- cb
 cb
 
 confusion <- table(predicted = predict(tree_model, type = "class"),
-      observed = d$leave)
+      observed = m_clean$leave)
 
 ```
 
-True positives are a benefit because those customers, having been correctly identified by the model, are candidates for targeting; they can be convinced to renew.  False positives are a cost because these customers were already going to stay; the incentive will be wasted on them. Moreover, costs and benefits will only be considered for customers predicted to leave---the first row of the table--- since they are the only ones to whom the incentive will be offered.  To estimate profit we simply multiply  the dollar value in each cell by the corresponding number of customers in the confusion matrix. We can calculate profit at the default threshold of .5 by multiplying the two tables together. (Note that this is NOT "matrix multiplication" in the linear algebraic sense, but simply a convenient way of multiplying values in the cells.)
+True positives are a benefit because those customers, having been correctly identified by the model, are candidates for targeting; they can be convinced to renew.  False positives are a cost because these customers were already going to stay; the incentive will be wasted on them. Moreover, costs and benefits will only be considered for customers predicted to leave---the first row of the table--- since they are the only ones to whom the incentive will be offered.  
+
+To estimate profit we simply multiply  the dollar value in each cell by the corresponding number of customers in the confusion matrix. We can calculate profit at the default threshold of .5 by multiplying the two tables together and subtracting the dollar value of false positives from the dollar value of the true positives. (Note that this is NOT "matrix multiplication" in the linear algebraic sense, but simply a convenient way of multiplying values in the cells.)
 
 
 ```{r, echo = T}
 # Confusion matrix
 table(predicted = predict(tree_model, type = "class"),
-      observed = d$leave)
+      observed = m_clean$leave)
 
 # Cost-benefit matrix
 cost_benefit
 
 # Profit matrix
 table(predicted = predict(tree_model, type = "class"),
-      observed = d$leave) * 
+      observed = m_clean$leave) *
   cost_benefit
 
 
@@ -230,185 +286,421 @@ table(predicted = predict(tree_model, type = "class"),
 
 ```
 
-Profit in this case is positive: 974,200.  Let's do the same sort of calculation using the class decision threshold of .7. Does profit go up or down?
+Profit in this case is positive: 1,158,000 - 183,800 = 974,200.  Let's do the same sort of calculation using the class decision threshold of .7. Does profit go up or down?
 
-```{r echo = T}
+```{r profit1, exercise  = T}
 # Profit matrix
 table(predicted = ifelse(predict(tree_model, type = "prob")[,1] > .7, "LEAVE", "STAY"),
-      observed = d$leave) *
+      observed = m_clean$leave) *
   cost_benefit
 
 
 ```
 
-Profit went down: 586,200. 
+Profit went down: 645,600 - 59,400 = 586,200.
 
 Notice that our profit estimates will change depending on:
 
-- *The cost matrix.* "While the probabilities can be estimated from data, the costs and benefits often cannot. They generally depend on external information provided via analysis of the consequences of decisions in the context of the specific business problem. Indeed, specifying the costs and benefits may take a great deal of time and thought. In many cases they cannot be specified exactly but only as approximate ranges" (DSB, Chapter 7).
+- *The cost-benefit matrix.* "While the probabilities can be estimated from data, the costs and benefits often cannot. They generally depend on external information provided via analysis of the consequences of decisions in the context of the specific business problem. Indeed, specifying the costs and benefits may take a great deal of time and thought. In many cases they cannot be specified exactly but only as approximate ranges" (DSB, Chapter 7).
 - *The accuracy of a given model*. The more accurate the model the fewer costs (false positives) and the more benefits (true positives), leading to higher overall profit.
-- *The decision threshold used to create a given confusion matrix*. The default threshold of .5 may not be ideal. In fact, we need a systematic method to decide  where to set the class decision threshold in order to maximize profit.
+- *The decision threshold used to create a given confusion matrix*. The default threshold of .5 may not be ideal. 
 
-### Profit Curve
+Suppose we convert the counts in the confusion matrix into rates or estimated probabilities, and perform the same calculations.  The result is not the total profit for a given class decision threshold, as above, but the *average* or *expected* profit.  
 
-A profit curve displays the estimated profit associated with a confusion matrix at every possible class decision threshold for a given cost matrix.  Profit curves are useful for comparing classifiers and for determining  what proportion of customers should be targeted  with an offer in order to maximize profit. Figure 8-2 in DSB is an example:
+<!-- We calculate the rates relative to the positive class (`LEAVE`) and the negative class (`STAY`). -->
 
-![](images/profit_curve.png)
+For reference, here is the confusion matrix at the class decision threshold of .5.
 
-The x-axis in this plot represents subsets of customers arranged from highest to lowest predicted probability (or "score"). The profit curve essentially visualizes what happens to profit when different class decision thresholds are used to decide whether to extend an offer. Because the data is sorted on the probability score, those probability thresholds correspond to different proportions of customers. Here is how DSB summarizes it:
+```{r cm1, exercise  = T}
+# Confusion matrix with counts
+table(predicted = predict(tree_model, type = "class"),
+      observed = m_clean$leave)
 
->We can produce a list of instances in the predicted scores, ranked by decreasing score, and then measure the expected profit that would result from choosing each successive cut-point in the list. Conceptually this amounts to ranking the list of instances  by score  from highest to lowest and sweeping down through it, recording the expected profit after each instance. At each cut-point we record the percentage of the list predicted as positive and the corresponding estimated profit. Graphing these values gives us a profit curve. (212)
+```
 
-We will use a profit curve below.
+To convert the counts into rates we simply divide the number in each cell by the total:
+
+<!-- - True Positive Rate or TPR:  1930 / (1930 + 538) = .78 -->
+<!-- - False Negative Rate or FNR: 1 - TPR = .22 -->
+<!-- - True Negative Rate or TNR: 1607 / (1607 + 919) = .64 -->
+<!-- - False Positive Rate or FPR: 1 - TNR = .36 -->
+
+<!-- Or: -->
+
+```{r cm2, exercise  = T}
+# Confusion matrix with proportions/probabilities
+table(predicted = predict(tree_model, type = "class"),
+      observed = m_clean$leave) %>% 
+  prop.table() %>% 
+  round(2)
+
+```
+
+To get *average* costs and benefits, we multiple the rates by the cost-benefit matrix:
+
+```{r profit2, exercise  = T}
+table(predicted = predict(tree_model, type = "class"),
+      observed = m_clean$leave) %>% 
+  prop.table *
+  cost_benefit
+```
+
+Average or expected profit will be \$231.88 - \$36.8 = \$195.08. If we multiply this average by the number of customers in the dataset, 4994, we get back approximately the same number we calculated above using the confusion matrix with .5 as the class decision threshold: profit = \$974,229.  (The slight discrepancy is due to rounding error.)
+
+```{r, echo = F, results = F}
+# Using the alternative formulation
+table(predicted = predict(tree_model, type = "class"),
+      observed = m_clean$leave) %>% 
+  prop.table(margin = 2) 
+
+
+cost_benefit
+  
+table(m_clean$leave) %>%  prop.table
+
+.49*(.78*600) + .51*(.36*-200)
+```
+
+Which class decision threshold would be the best? 
+
+<!-- Short answer: The one that maximizes total profit or---what is the same thing---expected profit. -->
 
 ## Expected Value Framework
 
-The expected value framework is basically a method for estimating profit for an intervention such as the MegaTelCo marketing campaign. Unfortunately, the discussion in DSB is difficult to understand.  This is due partly to the complexity of the case and partly to the fact that we can't actually estimate from the existing data the probabilities needed for the calculation. I will review the expected value framework for the MegaTelCo marketing campaign but then provide a simpler---and hopefully more straightforward example---using the AdviseInvest case.
+The expected value framework formalizes the calculations we've been doing and helps us answer the question of which class decision threshold would be best.  
 
-### Expected value framework: MegaTelCo 
+It would probably help, first, to demystify expected value by pointing out that it is just an average---in this case, average profit at different class decision thresholds.  
 
-DSB treats the framework in this case as a conceptual tool  for decomposing and refining the business problem rather than as a tool for calculating profit. I will adapt the formulation slightly to make it more straightforward by expressing the probability of leaving if targeted not as $1-p(Stay|x,T)$ but as $p(Leave|x,T)$.  The two expressions are identical.
+From DSB, Chapter 7, "A Key Analytical Framework:  Expected Value":
 
-The expected benefit of targeting for a particular individual with characteristics $x$ is:
+> The expected value computation provides a framework that is extremely useful in organizing thinking about data analytic problems. Specifically, it decomposes data analytic thinking into, 1. the structure of the problem, 2. the elements of the analysis that can be extracted from the data, and 3. the elements of the analysis that need to be acquired from other sources, for example, the business knowledge of subject matter experts.
 
-$$EB_T(x) = p(Stay|x,T)*(u_{Stay}(x)-c)+p(Leave|x,T)*(u_{Leave}(x)-c)$$
+> In an expected value calculation the possible outcomes of the situation are enumerated.  The expected value is then the weighted average of the values of the different possible outcomes, where the weight given to each value is its probability of occurrence. For example, if the outcomes represent different possible levels of profit, the expected profit calculation weights heavily the highly likely levels of profit, while unlikely levels of profit are given little weight. 
 
-In translation, the expected benefit of targeting a customer, $EB_T(x)$, is equal to:
+The general form of an expected value (EV) calculation is expressed in the following equation (*Equation 7-1* in DSB):
+ 
+ $$EV = p(o_1) * v(0_1) + p(o_2) * v(0_2) +p(o_3) * v(0_3) ... ,$$
+ 
+where each $o_i$ is a possible decision outcome, and $p(o_i)$ is its probability and $v(o_i)$ is its dollar value. 
 
-1. The probability a customer will stay *if targeted* multiplied by the profit if she stays (minus the incentive) 
+Above we used the four cells of the confusion matrix to define four possible outcomes (TP, FP, TN, FN), the rates for which, combined with information from the cost-benefit matrix, yielded average or expected profit at a given class decision threshold. As discussed, the benefit of true positives is \$600 while the cost of false positives is \$200.  But rather than calculating an *unweighted* mean for profit--- $(\$600 - \$200) / 2 = \$200$---we calculate a *weighted* mean using the probabilities from the confusion matrix to reflect the different numbers of customers in each matrix cell. We would then calculate expected profit at different possible decision thresholds in order to identify the one that produces maximum profit.  
 
-*plus*
+Here is an example of how we might do this calculation.
 
-2.  The probability she will  leave *if targeted* multiplied by the profit if she  leaves (minus the incentive). 
+1. Pick a set of potential class decision thresholds, and store them in a data frame with an empty profit column (to be filled in the next step).
 
-We used  the tree model  to estimate $p(Leave)$.   But this formula  requires  something different---an estimate of the probability of whether a customer will respond to the special offer, will stay if targeted: $p(Stay|x,T)$. To estimate this we would need evidence from prior marketing campaigns, which we don't have. The expected value framework is still useful in this case because it forces us to be clear about the exact nature of the business problem.  
+```{r ev1, exercise  = T}
+(EV <- data.frame(threshold = seq(0, 1, by = .1),
+                  profit = NA) %>% 
+  distinct(threshold, profit) %>% 
+  arrange(threshold))
 
-Next, we examine the expected benefit of *not* targeting:
+```
 
-$$EB_{notT}(x) = p(Stay|x,notT)*(u_{Stay}(x)-c)+p(Leave|x,notT)]*(u_{Leave}(x)-c)$$
+2. Calculate expected profit at every threshold using a loop. This code is a little involved but uses the same basic strategies developed above. Don't worry if you can't follow the code perfectly; it is presented here simply as an illustration of the method.
 
-This has a similar interpretation to the equation above for $EB_T$. 
+```{r ev2, exercise  = T}
 
-The point of these complicated formulations is to clearly define the business objective of the marketing campaign. Which customers should receive the special offer? We wouldn't want to target a customer who was already going to stay, even without the offer.  Now would we want to target a customer who would not stay, even with the offer.  Instead, we should target those customers whose probability of staying will be most impacted by the special offer. They have the largest value of targeting (VT), $EB_T(x) - EB_{notT}(x)$, and offer the highest return on investment for the marketing campaign: rather than leaving they stay and continue paying fees. DSB expresses this result as $VT=\Delta(p)∗u_{Stay}(x)−c$, the change in the probability of staying multiplied by revenue associated with staying minus the cost of the incentive.  Basically $\Delta(p)$ serves as a weight on revenue in the formula for $VT$: small $\Delta(p)$ decreases, while large $\Delta(p)$ increases, the impact of $u_{Stay}(x)$ in calculating profit.  
+for(i in 1:nrow(EV)){
+  threshold <- EV$threshold[i]
+  probability <- predict(tree_model, type = "prob")[,1]
+  predicted_class <- ifelse(probability >= threshold, "LEAVE", "STAY") 
+  predicted_class <- factor(predicted_class, levels = c("LEAVE", "STAY"))
+  confusion_matrix <- table(predicted_class, m_clean$leave) %>% prop.table
+  profit_matrix <- confusion_matrix * cost_benefit
+  EV$profit[i] <- profit_matrix[1,] %>% sum 
+  }
 
-In some respects this is an unsatisfying result because: (a)  we don't know what the future profit of customers will be (some might stay a year, others 10 years, with differing contract values), and (b)  we don't know how responsive individual  customers would be to an incentive (as noted above). Nevertheless, these formulations have helped us decompose, and thereby better understand, the business problem and to think harder about data requirements. Part of the report we write should include a summary of which additional data items would be required to improve model quality and the profitability of future marketing campaigns. 
+EV %>%  round(2)
+```
 
-### Expected value framework: AdviseInvest
+You get the idea. Setting the threshold at around .2---that is, predict `LEAVE` for customers with estimated probability of churn equal to or greater than the threshold---would produce the maximum expected profit. 
 
-Analyzing the AdviseInvest case using the expected value framework is more straightforward.  As a reminder: the analytic objective we identified in the AdviseInvest case was to predict whether a customer would answer a scheduled call from a sales representative. To this end, you created in the previous module a supervised classification tree model of the outcome variable, `answered` (coded `yes` or `no`). How to use this model to solve the business problem is of course an important question---should we  maximize the utilization of the current four sale representatives (as requested by the Director of Sales) or maximize overall profit?  For the sake of illustrating the expected value framework let's assume that our business objective is to maximize profit and that the proposed operational adjustment is to schedule calls with just a subset of customers---those most likely to answer.  If the decision in the MegaTelCo marketing campaign was whether to target, the parallel decision in the AdviseInvest case is whether to call.  To use the expected value framework we need to define $EB_C(x)$ and $EB_{notC}(x)$, which requires identifying the customer action that generates a return.
+There are a couple of things to keep in mind when reading this table:
 
-Hmmm.  
+- Expected profit at the thresholds of .8 and .9 is 0 because the maximum predicted probability of leaving for this dataset and model is .797. Hence no customers would be targeted at these thresholds, and there would be no profit.
 
-Right away we can see that *answering* the phone is not the action we should care about, since it is possible for a customer to answer without purchasing. This would represent a cost without revenue.  If we care about profit, *purchasing* is the action we should be modeling! 
+- A threshold of 0 means that all customers would be assigned a class label of `LEAVE`, in which case all customers would be targeted.  
 
-This brief analysis illustrates the conceptual importance of the expected value framework. It has helped us perform business validation of the modeling we have done so far, focusing our thinking about the business problem and revealing that we need to adjust our approach.  If the objective is to maximize profit then we need a model to estimate not $p(Answered|x)$ but rather $p(Purchase|x)$. In fact, the record of customer purchases is available in the dataset so we should be able to define $EB_C(x)$ and $EB_{notC}(x)$.
+The company would certainly make money by targeting all customers: on average\$195.35.  But offering the incentive only to those customers who have a .2 or greater probability of churning would increase expected profit to \$207.93. Here is total profit for that scenario:
 
-The expected value formulation in this case is simpler than in the MegaTelCo case, since we really only need to estimate the expected benefit of calling, $EB_{C}(x)$.  Logically, the expected financial benefit of not calling, $EB_{notC}(x)$, is 0.  Let's examine this.  
+```{r total_profit1, exercise  = T}
+# Profit matrix
+table(predicted = ifelse(predict(tree_model, type = "prob")[,1] >= .2, "LEAVE", "STAY"),
+      observed = m_clean$leave) *
+  cost_benefit
 
-$$EB_{notC}(x) = p(Purchase|x,notC)*(u_{Purchase}(x)-c)+p(NoPurchase|x,notC)*(u_{NoPurchase}(x)-c)$$
+```
 
-Clearly, if a customer is not called then the probability of purchasing a product is 0, in which case the entire first term in the above formulation, $p(Purchase|x,notC)*(u_{Purchase}(x)-c)$, evaluates to 0. The probability of not purchasing if not called, $p(NoPurchase|x,notC)$, is 1, but the profit from no purchase, $(u_{NoPurchase}(x)$, is obviously 0, as is $c$, the cost of calling.  (The company expends no resources if no call is made.)  So the second term, $p(NoPurchase|x,notC)*(u_{NoPurchase}(x)-c)$, also evaluates to 0.
+\$1,360,200 - \$321,800 = \$1,038,400. By contrast, offering the incentive to all customers (equivalent to predicting "LEAVE" for everyone) would generate higher revenue, but at a higher cost.
 
-That leaves the expected benefit of calling to analyze.
+```{r total_profit2, exercise  = T}
+table(predicted = factor(rep("LEAVE", 4994), levels = c("LEAVE", "STAY")),
+      observed = m_clean$leave) *
+  cost_benefit
 
-$$EB_{C}(x) = p(Purchase|x,C)*(u_{Purchase}(x)-c)+p(NoPurchase|x,C)*(u_{NoPurchase}(x)-c)$$
+```
 
-As noted, the data contains a record of customer purchases, `product`, which could be converted into a binary outcome variable: `purchase`.  Per customer profit, $EB_{C}(x)$, could then be calculated directly using a model of `purchase` to estimate $p(Purchase|x,C)$ and $p(NoPurchase|x,C)$, and plugging in quantities for $u_{Purchase}(x)$ and $c$. The process wold be something like this:
+Overall, profit would be lower: \$1,480,800 - \$505,200 = \$975,600. So, yes, it definitely makes financial sense to selectively target customers with a retention offer.
 
-1. Turn `purchase` into a binary variable: `no` if `0` (which represents no purchase in this dataset), `yes` otherwise.
-2. Fit a classification tree model of `purchase`.
-3. Use the model to estimate $p(Purchase|x,C)$ and $p(NoPurchase|x,C)$.  
-4. Identify a dollar amount for each customer for $u_{Purchase}(x)$ based on the type of product purchased. Clearly $u_{NoPurchase}(x)$ will be 0.
-5. Estimate the cost of calling, $c$.
-6. Plug these values into the formula for $EB_{C}(x)$.
+This comparison illustrates that the expected value framework offers a powerful tool for validating a model using business-relevant metrics. We can always compare the performance of competitor models using a metric like accuracy. However, the expected value framework offers a general method for evaluating modeling results using exactly the values that matter for a particular business problem, in this case translating model performance directly into profit.
+
+<!-- The proportion of `STAY` in this dataset --- the majority class---is an important baseline model, serving as a benchmark for model performance.  After all, one option  with a binary outcome is to  create a simple  predictive model consisting in a rule: always predict the  majority class. We'll call this benchmark model "majority class prediction." Predicting the majority class will have an in-sample accuracy equal to the proportion in the data of the class label being predicted, which in the case of `STAY` is: 2526 / (2468 + 2526) = .506. So if we always predict `STAY` we will be right 50.6% of the time---whenever the observed outcome is `STAY`---and wrong 1 - .506 = 49.4% of the time---whenever the observed outcome is `LEAVE`.  This is not a great model, obviously, but it would slightly beat random guessing, which would be correct exactly 50% of the time, on average. Any model we develop must have better accuracy, and produce more profit, than a model consisting either in random guessing or in majority class prediction. -->
+
+<!-- What is expected profit for the majority class model? Well, this calculation is pretty simple.  If we always predict `STAY` then no marketing intervention is called for so our expected profit in the baseline case would be \$0. This is equivalent to doing nothing. -->
+
+<!-- What is the expected profit for random guessing? On average, we would expect half of our guesses to be `LEAVE`.  The calculation would look like this: -->
+
+<!-- ```{r} -->
+<!-- .25 * .494 * 600 + .25 * .506 * -200 -->
+<!-- ``` -->
+<!-- ### Profit Curve -->
+
+<!-- A profit curve displays the estimated profit associated with a confusion matrix at every possible class decision threshold for a given cost matrix.  Profit curves are useful for comparing classifiers and for determining  what proportion of customers should be targeted  with an offer in order to maximize profit. Figure 8-2 in DSB is an example: -->
+
+<!-- ![](images/profit_curve.png) -->
+
+<!-- The x-axis in this plot represents subsets of customers arranged from highest to lowest predicted probability (or "score"). The profit curve essentially visualizes what happens to profit when different class decision thresholds are used to decide whether to extend an offer. Because the data is sorted on the probability score, those probability thresholds correspond to different proportions of customers. Here is how DSB summarizes it: -->
+
+<!-- >We can produce a list of instances in the predicted scores, ranked by decreasing score, and then measure the expected profit that would result from choosing each successive cut-point in the list. Conceptually this amounts to ranking the list of instances  by score  from highest to lowest and sweeping down through it, recording the expected profit after each instance. At each cut-point we record the percentage of the list predicted as positive and the corresponding estimated profit. Graphing these values gives us a profit curve. (212) -->
+
+<!-- We will use a profit curve below. -->
+
+<!-- ## Expected Value Framework -->
+
+<!-- The expected value framework is basically a method for estimating profit for an intervention such as the MegaTelCo marketing campaign. Unfortunately, the discussion in DSB is difficult to understand.  This is due partly to the complexity of the case and partly to the fact that we can't actually estimate from the existing data the probabilities needed for the calculation. I will review the expected value framework for the MegaTelCo marketing campaign but then provide a simpler---and hopefully more straightforward example---using the AdviseInvest case. -->
+
+<!-- ### Expected value framework: MegaTelCo  -->
+
+<!-- DSB treats the framework in this case as a conceptual tool  for decomposing and refining the business problem rather than as a tool for calculating profit. I will adapt the formulation slightly to make it more straightforward by expressing the probability of leaving if targeted not as $1-p(Stay|x,T)$ but as $p(Leave|x,T)$.  The two expressions are identical. -->
+
+<!-- The expected benefit of targeting for a particular individual with characteristics $x$ is: -->
+
+<!-- $$EB_T(x) = p(Stay|x,T)*(u_{Stay}(x)-c)+p(Leave|x,T)*(u_{Leave}(x)-c)$$ -->
+
+<!-- In translation, the expected benefit of targeting a customer, $EB_T(x)$, is equal to: -->
+
+<!-- 1. The probability a customer will stay *if targeted* multiplied by the profit if she stays (minus the incentive)  -->
+
+<!-- *plus* -->
+
+<!-- 2.  The probability she will  leave *if targeted* multiplied by the profit if she  leaves (minus the incentive).  -->
+
+<!-- We used  the tree model  to estimate $p(Leave)$.   But this formula  requires  something different---an estimate of the probability of whether a customer will respond to the special offer, will stay if targeted: $p(Stay|x,T)$. To estimate this we would need evidence from prior marketing campaigns, which we don't have. The expected value framework is still useful in this case because it forces us to be clear about the exact nature of the business problem.   -->
+
+<!-- Next, we examine the expected benefit of *not* targeting: -->
+
+<!-- $$EB_{notT}(x) = p(Stay|x,notT)*(u_{Stay}(x)-c)+p(Leave|x,notT)]*(u_{Leave}(x)-c)$$ -->
+
+<!-- This has a similar interpretation to the equation above for $EB_T$.  -->
+
+<!-- The point of these complicated formulations is to clearly define the business objective of the marketing campaign. Which customers should receive the special offer? We wouldn't want to target a customer who was already going to stay, even without the offer, nor would we want to target a customer who would not stay, even with the offer.  Instead, we should target those customers whose probability of staying will be most impacted by the special offer. They have the largest value of targeting (VT), $EB_T(x) - EB_{notT}(x)$, and offer the highest return on investment for the marketing campaign: rather than leaving they stay and continue paying fees. DSB expresses this result as $VT=\Delta(p)∗u_{Stay}(x)−c$, the change in the probability of staying multiplied by revenue associated with staying minus the cost of the incentive.  Basically $\Delta(p)$ functions as a weight on revenue in the formula for $VT$: small $\Delta(p)$ decreases, while large $\Delta(p)$ increases, the impact of $u_{Stay}(x)$ in calculating profit.   -->
+
+<!-- In some respects this is an unsatisfying result because: (a)  we don't know what the future profit of customers will be (some might stay a year, others 10 years, with differing contract values), and (b)  we don't know how responsive individual  customers would be to an incentive (as noted above). Nevertheless, these formulations have helped us decompose, and thereby better understand, the business problem and to think harder about data requirements. Part of the report we write should include a summary of which additional data items would be required to improve model quality and the profitability of future marketing campaigns.  -->
+
+<!-- ### Expected value framework: AdviseInvest -->
+
+<!-- Analyzing the AdviseInvest case using the expected value framework is more straightforward.  As a reminder: the analytic objective we identified in the AdviseInvest case was to predict whether a customer would answer a scheduled call from a sales representative. To this end, you created in the previous module a supervised classification tree model of the outcome variable, `answered` (coded `yes` or `no`). How to use this model to solve the business problem is of course an important question---should we  maximize the utilization of the current four sale representatives (as requested by the Director of Sales) or maximize overall profit?  For the sake of illustrating the expected value framework let's assume that our business objective is to maximize profit and that the proposed operational adjustment is to schedule calls with just a subset of customers---those most likely to answer.  If the decision in the MegaTelCo marketing campaign was whether to target, the parallel decision in the AdviseInvest case is whether to call.  To use the expected value framework we need to define $EB_C(x)$ and $EB_{notC}(x)$, which requires identifying the customer action that generates a return. -->
+
+<!-- Hmmm.   -->
+
+<!-- Right away we can see that *answering* the phone is not the action we should care about, since it is possible for a customer to answer without purchasing. This would represent a cost without revenue.  If we care about profit, *purchasing* is the action we should be modeling!  -->
+
+<!-- This brief analysis illustrates the conceptual importance of the expected value framework. It has helped us perform business validation of the modeling we have done so far, focusing our thinking about the business problem and revealing that we need to adjust our approach.  If the objective is to maximize profit then we need a model to estimate not $p(Answered|x)$ but rather $p(Purchase|x)$. In fact, the record of customer purchases is available in the dataset so we should be able to define $EB_C(x)$ and $EB_{notC}(x)$. -->
+
+<!-- The expected value formulation in this case is simpler than in the MegaTelCo case, since we really only need to estimate the expected benefit of calling, $EB_{C}(x)$.  Logically, the expected financial benefit of not calling, $EB_{notC}(x)$, is 0.  Let's examine this.   -->
+
+<!-- $$EB_{notC}(x) = p(Purchase|x,notC)*(u_{Purchase}(x)-c)+p(NoPurchase|x,notC)*(u_{NoPurchase}(x)-c)$$ -->
+
+<!-- Clearly, if a customer is not called then the probability of purchasing a product is 0, in which case the entire first term in the above formulation, $p(Purchase|x,notC)*(u_{Purchase}(x)-c)$, evaluates to 0. The probability of not purchasing if not called, $p(NoPurchase|x,notC)$, is 1, but the revenue from no purchase, $u_{NoPurchase}(x)$, is obviously 0, as is $c$, the cost of calling.  (The company expends no resources if no call is made.)  So the second term, $p(NoPurchase|x,notC)*(u_{NoPurchase}(x)-c)$, also evaluates to 0. -->
+
+<!-- That leaves the expected benefit of calling to analyze. -->
+
+<!-- $$EB_{C}(x) = p(Purchase|x,C)*(u_{Purchase}(x)-c)+p(NoPurchase|x,C)*(u_{NoPurchase}(x)-c)$$ -->
+
+<!-- As noted, the data contains a record of customer purchases, `product`, which could be converted into a binary outcome variable: `purchase`.  Per customer profit, $EB_{C}(x)$, could then be calculated directly using a model of `purchase` to estimate $p(Purchase|x,C)$ and $p(NoPurchase|x,C)$, and plugging in quantities for $u_{Purchase}(x)$ and $c$. The process would be something like this: -->
+
+<!-- 1. Turn `purchase` into a binary variable: `no` if `0` (which represents no purchase in this dataset), `yes` otherwise. -->
+<!-- 2. Fit a classification tree model of `purchase`. -->
+<!-- 3. Use the model to estimate $p(Purchase|x,C)$ and $p(NoPurchase|x,C)$.   -->
+<!-- 4. Identify a dollar amount for each customer for $u_{Purchase}(x)$ based on the type of product purchased. Clearly $u_{NoPurchase}(x)$ will be 0. -->
+<!-- 5. Estimate the cost of calling, $c$. -->
+<!-- 6. Plug these values into the formula for $EB_{C}(x)$. -->
 
 ## What Next?
 
-As DSB says, "Business exigencies may force us to proceed. We need to reduce churn; marketing has confidence in this offer, and we certainly have some data that might inform how we proceed" (287). How shall we proceed? 
+<!-- As DSB says, "Business exigencies may force us to proceed. We need to reduce churn; marketing has confidence in this offer, and we certainly have some data that might inform how we proceed" (287). How shall we proceed in the MegaTelCo case?  -->
 
-We can make some simplifying assumptions:  
+Remember that our tree model was created or *trained* using historical data, which included information about the observed target---whether a given customer in fact churned. This is, of course, what makes the approach *supervised*: there is an observed outcome variable.  We started the course by emphasizing the distinction between *modeling* and *using* a model.  How will we use the model?  To predict churn probabilities for existing customers.  These probabilities, together with the class decision threshold that will optimize expected profit (also calculated from historical data, as above), can be used to develop a contact list of customers for the Marketing department.  Marketing can thus make best use of the incentive money allocated for the campaign by spending it only on the customers who are most likely leave.
 
-1. The future profit for all retained customers will be the same.
+Here are the tasks necessary to produce the list:
 
-2. The cost of the incentive for all customers will be the same.
+1. Train a classification model.
 
-3. The customers who get the incentive will stay.
+2. Obtain a dataset of *existing* customers.  The dataset must have exactly the same features as the historical data used to train the model, but it will obviously not include a target variable:  existing customers have not yet renewed or churned.  
 
-These assumptions reduce the expected benefit formulation to the problem of estimating $\Delta(p)$. It makes sense that customers who  are already likely to stay---large model-estimated $p(STAY)$--- will have correspondingly small potential $\Delta(p)$ since their retention behavior can't change much: they were already very likely to stay. Consequently, this analysis  suggests that Marketing should focus on those customers with the highest probability of leaving since, in the absence of further information, they offer the largest potential $\Delta(p)$. The prescriptive analytics part of the project could consist in providing recommendations to Marketing regarding *which customers to contact* and *how to structure the incentive*.
+3. Use the trained model to predict the probability of leaving for each existing customer.  
 
-## Which Customers to Contact?
+4. Use the cost-benefit matrix and predicted probabilities to find the class decision threshold that optimizes expected profit.   Our calculation above suggested that .2 would be the best cutoff. We will use this number.
 
-The tree model can be used to produce a ranked contact list of customers. The ranking would essentially provide guidance on how to spend the incentive money allocated for the campaign: spend it on the customers near the top of the list, who are most likely leave and have the largest estimated $\Delta(p)$.  To produce the list, simply add the estimate of $p(LEAVE|X)$ into the original data frame and sort on that variable, known as a "score," selecting the resulting column along with `id`.   Here is example code:
+5. Use these predicted probabilities, along with the best class decision threshold, to identify a subset of existing customers to be contacted by Marketing. This contact list will be the deliverable for the project.
 
-```{r contact, exercise = T}
+Let's work through the details.
 
-d %>%
-  mutate(probability = predict(tree_model, type = "prob")[,1]) %>%
-  arrange(desc(probability)) %>%
-  select(id, probability) 
+### 1. Train the model
+
+```{r model, exercise  = T}
+(tree_model <- rpart(leave ~ ., data = select(m_clean, -id)))
 ```
 
-The list is organized by the idea that some customers should be targeted---those with a high probability of leaving---and some, who have a low probability of leaving, should not be targeted. But *how many* from the list should be targeted?  That is a key question, and one you should expect to be asked when you present your plan to Marketing.  
+Here we must be careful to remove `id` since, as an arbitrary number, it has no predictive power. We will, however, use `id` later to associate a predicted probability with each customer.
 
-## How Many Customers to Contact?
+### 2. Obtain a dataset of existing customers
 
-As we saw above, a profit curve can be used to estimate the proportion of customers who should be contacted. We have stipulated that everyone who is targeted will be retained, hence $p(S|x,T)$ = 1. Customers who were correctly predicted to leave (true positives) and were targeted, converting them from `LEAVE` to `STAY`, would thus generate 600 dollars in revenue. Customers who were incorrectly predicted to leave (false positives) and were targeted would  generate -200  dollars in revenue. Customers who were predicted to stay would not be offered the incentive,  and, generating no costs or revenue, can be ignored for evaluating profit. 
+Here is the dataset of 2000 current customers. Notice that the variables are the same as those in the historical data (minus the target), though obviously the customers themselves are different.
 
-The code for a profit curve is tricky to understand, so let's display and explain the underlying data first.
-
-```{r data, exercise= T}
-# Define revenue and cost
-revenue <- 800
-cost <- 200
-
-# Underlying data
-d %>%
-  mutate(probability = predict(tree_model, type = "prob")[,1]) %>%
-  arrange(desc(probability)) %>%
-  mutate(profit = ifelse(leave == "LEAVE", revenue - cost, -cost),
-         cum_profit = cumsum(profit),
-         customers = 1:n() / n()) %>%
-  select(probability, profit, cum_profit, customers) 
-  
-
-
+```{r include = F}
+set.seed(123)
+current_customers <- m_clean %>% 
+  sample_n(size = 2000) %>% 
+  mutate(id = sample(seq(20000, 30000, by = 1), 2000)) %>% 
+  select(-leave)
 ```
 
-
-Here are the steps:
-
-1. Add predicted probability of leaving, $p(LEAVE)$, to the data.
-2. Important:  as in the contact list, the data must be sorted by $p(LEAVE)$, high to low.
-3. Calculate a cumulative or running proportion, `customers`, for each row.  The cumulative proportion increases with every row, and is the proportion of the data represented by that row *along with every row above it*. Rows 1-10, for example, together represent .002 of the dataset. This will be the x-axis in the profit curve.
-4. Calculate `profit`.  600 dollars if the observed outcome for a row is `LEAVE`, or -200 dollars if `STAY`.
-5. Calculate `cum_profit`, a cumulative tally of `profit`. This will be the y-axis in the profit curve.  
-
-Imagine that we are using the probability in each row as the class decision threshold for predicting `LEAVE` such that we predict `LEAVE` for the rows above and inclusive of that row.  In row 5, for example, we would predict `LEAVE` for just 5 rows (1 - 5), `STAY` for all the others (6 - 4994), while in row 6 we would predict `LEAVE` for 6 rows (1 - 6), `STAY` for all the others (7 - 4994), and so on. In effect, we are successively subsetting the data by rows---predicting `LEAVE` for those customers in the selected rows---and computing a profit summary for the selection, contained in the final value of the subset's `cum_profit`.  For example, in the subset consisting in the first 10 rows there were 9 true positives and 1 false positive, so subsetting the data at row 10 would produce combined profit of 9 x 600 + 1 x 200 = 5200, which is the value of `cum_profit` for row 10.  
-
-Here is the  plot.
-
-
-```{r plot, exercise = T}
-# Define revenue and cost
-revenue <- 800
-cost <- 200
-
-# Make plot
-d %>%
-  mutate(probability = predict(tree_model, type = "prob")[,1]) %>%
-  arrange(desc(probability)) %>%
-  mutate(profit = ifelse(leave == "LEAVE", revenue - cost, -cost),
-         cum_profit = cumsum(profit),
-         customers = 1:n() / n()) %>%
-  ggplot(aes(customers, cum_profit))+
-  geom_line() +
-  labs(title = "Profit Curve for Marketing Campaign",
-       x = "Proportion of customers targeted (decreasing by score)",
-       y = "Profit") +
-  theme_minimal()
-
-
+```{r data, exercise  = T}
+glimpse(current_customers)
 ```
+
+### 3. Use the model to predict probabilities
+
+Predicting probabilities for the new dataset of current customers is straightforward.  Simply use the `newdata` argument in the `predict()` function:
+
+```{r  predict, exercise  = T}
+predict(tree_model, 
+        newdata = current_customers, 
+        type = "prob") %>% 
+  head
+```
+
+We'll now set up a new data frame that includes only `id` and the predicted probability of churn.  
+
+```{r  predict2, exercise  = T}
+
+predictions <- current_customers %>% 
+  select(id) %>% 
+  mutate(churn_prob = predict(tree_model, 
+                              newdata = current_customers, 
+                              type = "prob")[,1])
+
+head(predictions)
+```
+
+### 4. Find the optimal class decision threshold 
+
+Above we calculated this as .2.  
+
+### 5. Create the contact list
+
+The contact list will consist in the subset of customers with model-estimated probability of .2 or greater.
+
+```{r  contact, exercise  = T}
+contact_list <- predictions %>% 
+  filter(churn_prob >= .2)
+
+nrow(contact_list)
+```
+
+Marketing should contact the `r nrow(contact_list)` existing customers on this list with a retention offer.
+
+<!-- Let's make some simplifying assumptions:   -->
+
+<!-- 1. The future profit for all retained customers will be the same. -->
+
+<!-- 2. The cost of the incentive for all customers will be the same. -->
+
+<!-- 3. The customers who get the incentive will stay. -->
+
+<!-- These assumptions reduce the expected benefit formulation to the problem of estimating $\Delta(p)$. It makes sense that customers who  are already likely to stay---large model-estimated $p(STAY)$--- will have correspondingly small potential $\Delta(p)$ since their retention behavior can't change much: they were already very likely to stay. Consequently, this analysis  suggests that Marketing should focus on those customers with the highest probability of leaving since, in the absence of further information, they offer the largest potential $\Delta(p)$. The prescriptive analytics part of the project could consist in providing recommendations to Marketing regarding *which customers to contact* and *how to structure the incentive*. -->
+
+<!-- Customers who  are already likely to stay---large model-estimated $p(STAY)$--- will have correspondingly small potential profit since their retention behavior can't change much: they were already very likely to stay. This  suggests that Marketing should focus on those customers with the highest probability of leaving since  they offer the largest potential profit. The prescriptive analytics part of the project could consist in providing recommendations to Marketing regarding *which customers to contact* and *how to structure the incentive*.  The latter topic is potentially pretty involved, and beyond the scope of this tutorial.  We will focus instead on using the model to develop a customer contact list. -->
+
+
+
+<!-- One answer to this question is that we can  -->
+
+<!-- ### Which Customers to Contact? -->
+
+<!-- The tree model can be used to produce a ranked contact list of customers. The ranking would essentially provide guidance on how to spend the incentive money allocated for the campaign: spend it on the customers near the top of the list, who are most likely leave.  To produce the list, simply add the estimate of $p(LEAVE|X)$ into the original data frame and sort on that variable, known as a "score," selecting the resulting column along with `id`.   Here is example code: -->
+
+<!-- ```{r contact, exercise = T} -->
+
+<!-- m_clean %>% -->
+<!--   mutate(probability = predict(tree_model, type = "prob")[,1]) %>% -->
+<!--   arrange(desc(probability)) %>% -->
+<!--   select(id, probability)  -->
+<!-- ``` -->
+
+<!-- The list is organized by the idea that some customers should be targeted---those with a high probability of leaving---and some, who have a low probability of leaving, should not be targeted. But *how many* from the list should be targeted?  That is a key question, and one you should expect to be asked when you present your plan to Marketing.   -->
+
+<!-- ### How Many Customers to Contact? -->
+
+<!-- As we saw above, a profit curve can be used to estimate the proportion of customers who should be contacted. We have stipulated that everyone who is targeted will be retained. Customers who were correctly predicted to leave (true positives) and were targeted, converting them from `LEAVE` to `STAY`, would thus generate \$600 in revenue. Customers who were incorrectly predicted to leave (false positives) and were targeted would  generate \$-200 in revenue. Customers who were predicted to stay would not be offered the incentive,  and, generating no costs or revenue, can be ignored for evaluating profit.  -->
+
+<!-- The code for a profit curve is tricky to understand, so let's display and explain the underlying data first. -->
+
+<!-- ```{r data, exercise= T} -->
+<!-- # Define revenue and cost -->
+<!-- revenue <- 800 -->
+<!-- cost <- 200 -->
+
+<!-- # Underlying data -->
+<!-- d %>% -->
+<!--   mutate(probability = predict(tree_model, type = "prob")[,1]) %>% -->
+<!--   arrange(desc(probability)) %>% -->
+<!--   mutate(profit = ifelse(leave == "LEAVE", revenue - cost, -cost), -->
+<!--          cum_profit = cumsum(profit), -->
+<!--          customers = 1:n() / n()) %>% -->
+<!--   select(probability, profit, cum_profit, customers)  -->
+
+
+
+<!-- ``` -->
+
+
+<!-- Here are the steps: -->
+
+<!-- 1. Add predicted probability of leaving, $p(LEAVE)$, to the data. -->
+<!-- 2. Important:  as in the contact list, the data must be sorted by $p(LEAVE)$, high to low. -->
+<!-- 3. Calculate a cumulative or running proportion, `customers`, for each row.  The cumulative proportion increases with every row, and is the proportion of the data represented by that row *along with every row above it*. Rows 1-10, for example, together represent .002 of the dataset. This will be the x-axis in the profit curve. -->
+<!-- 4. Calculate `profit`.  600 dollars if the observed outcome for a row is `LEAVE`, or -200 dollars if `STAY`. -->
+<!-- 5. Calculate `cum_profit`, a cumulative tally of `profit`. This will be the y-axis in the profit curve.   -->
+
+<!-- Imagine that we are using the probability in each row as the class decision threshold for predicting `LEAVE` such that we predict `LEAVE` for the rows above and inclusive of that row.  In row 5, for example, we would predict `LEAVE` for just 5 rows (1 - 5), `STAY` for all the others (6 - 4994), while in row 6 we would predict `LEAVE` for 6 rows (1 - 6), `STAY` for all the others (7 - 4994), and so on. In effect, we are successively subsetting the data by rows---predicting `LEAVE` for those customers in the selected rows---and computing a profit summary for the selection, contained in the final value of the subset's `cum_profit`.  For example, in the subset consisting in the first 10 rows there were 9 true positives and 1 false positive, so subsetting the data at row 10 would produce combined profit of 9 x 600 + 1 x 200 = 5200, which is the value of `cum_profit` for row 10.   -->
+
+<!-- Here is the  plot. -->
+
+
+<!-- ```{r plot, exercise = T} -->
+<!-- # Define revenue and cost -->
+<!-- revenue <- 800 -->
+<!-- cost <- 200 -->
+
+<!-- # Make plot -->
+<!-- d %>% -->
+<!--   mutate(probability = predict(tree_model, type = "prob")[,1]) %>% -->
+<!--   arrange(desc(probability)) %>% -->
+<!--   mutate(profit = ifelse(leave == "LEAVE", revenue - cost, -cost), -->
+<!--          cum_profit = cumsum(profit), -->
+<!--          customers = 1:n() / n()) %>% -->
+<!--   ggplot(aes(customers, cum_profit))+ -->
+<!--   geom_line() + -->
+<!--   labs(title = "Profit Curve for Marketing Campaign", -->
+<!--        x = "Proportion of customers targeted (decreasing by score)", -->
+<!--        y = "Profit") + -->
+<!--   theme_minimal() -->
+
+
+<!-- ``` -->
 
 
 <!-- ```{r} -->
@@ -439,114 +731,114 @@ d %>%
 
 
 
-The plot reveals what proportion of customers should be targeted in order to maximize profit. When the targeted group increasingly includes customers with a low probability of leaving (traveling right on the x-axis), the costs will begin to overwhelm the  profits and the campaign will have diminishing returns. That happens at about .75 in the plot.
+<!-- The plot reveals what proportion of customers should be targeted in order to maximize profit. When the targeted group increasingly includes customers with a low probability of leaving (traveling right on the x-axis), the costs will begin to overwhelm the  profits and the campaign will have diminishing returns. That happens at about .75 in the plot.  -->
 
-In sum, this profit curve illustrates that you can be confident in your recommendation to Marketing that  profit would be maximized by contacting approximately the top 75% of customers (ranked by the probability of leaving). Moreover, if the budget for the campaign is limited (and budgets are always limited), then contacting just 50% of the customers, for example, would reap nearly the same additional profit. 
+<!-- In sum, this profit curve illustrates that you can be confident in your recommendation to Marketing that  profit would be maximized by contacting approximately the top 75% of customers (ranked by the probability of leaving). Moreover, if the budget for the campaign is limited (and budgets are always limited), then contacting just 50% of the customers, for example, would reap nearly the same additional profit.  -->
 
-## How to Structure the Incentive?
+<!-- ## How to Structure the Incentive? -->
 
-Of course, one of our initial assumptions was dubious: not everyone who receives the special offer will respond by renewing the contract.  Therefore, we should think about how to structure the incentive to make it as appealing as possible to customers likely to churn.  To this end variable importance from the tree model can provide helpful guidance. Why are customers leaving? We saw from EDA, as well as from  the tree model, that customer satisfaction had very little impact on  customer churn.   What about the other predictors that showed a large impact?
- 
-```{r echo=TRUE}
+<!-- Of course, one of our initial assumptions was dubious: not everyone who receives the special offer will respond by renewing the contract.  Therefore, we should think about how to structure the incentive to make it as appealing as possible to customers likely to churn.  To this end variable importance from the tree model can provide helpful guidance. Why are customers leaving? We saw from EDA, as well as from  the tree model, that customer satisfaction had very little impact on  customer churn.   What about the other predictors that showed a large impact? -->
 
-tree_model$variable.importance
-```
+<!-- ```{r echo=TRUE} -->
 
-
-`Overage` is interesting.  By definition,  `overage` is a penalty charge, and it would seem to be a pain point for some customers.   The company could potentially adjust  or waive the penalty.  Let's visualize the relationship between overage and the probability of leaving, first adding the model estimated probability into the data frame:
-
-```{r echo =TRUE}
-#  Add the probability of leaving
-d %>%
-  mutate(p = predict(tree_model, type = "prob")[,1]) %>% 
-  ggplot(aes(overage, p)) +
-  geom_jitter() +
-  labs(title = "p(LEAVE) ~ overage") +
-  theme_minimal()
-
-```
-
-High overage seems to affect the probability of leaving for some customers but not others.  Perhaps a third variable accounts for the difference, such as other high importance variables: `house`, `income`, high usage (`over_15mins_calls_per_month`).    For ease of visualization we need to bin these continuous variables. `dplyr` has a very handy function, `cut_number()`, that  bins continuous variables into categories with equal numbers of observations.  Our strategy will be to create [small multiples plots](https://en.wikipedia.org/wiki/Small_multiple) to see whether the relationship between `overage` and $p(LEAVE)$ varies by levels of `house`, `income`, high usage.   
-
-```{r echo = T}
-# Add categorical variables
-d %<>% #This is an assignment operator from magrittr package, same as:  d <- d %>%
-  mutate(income_cat = cut_number(income/1000, 4),
-         house_cat = cut_number(house/100000,4),
-         usage = cut_number(over_15mins_calls_per_month, 4))
-
-glimpse(d)
-```
-
-Notice that `cut_number()` has created a factor variable that indicates the numeric range of the bin. We will start by analyzing high usage.
+<!-- tree_model$variable.importance -->
+<!-- ``` -->
 
 
-```{r echo =T}
+<!-- `Overage` is interesting.  By definition,  `overage` is a penalty charge, and it would seem to be a pain point for some customers.   The company could potentially adjust  or waive the penalty.  Let's visualize the relationship between overage and the probability of leaving, first adding the model estimated probability into the data frame: -->
 
-d %>%
-  mutate(p = predict(tree_model, type = "prob")[,1]) %>% 
-  ggplot(aes(overage, p)) +
-  geom_jitter() +
-  facet_wrap(~usage) +
-  labs(title = "p(LEAVE) ~ overage, varying by usage")
+<!-- ```{r echo =TRUE} -->
+<!-- #  Add the probability of leaving -->
+<!-- d %>% -->
+<!--   mutate(p = predict(tree_model, type = "prob")[,1]) %>%  -->
+<!--   ggplot(aes(overage, p)) + -->
+<!--   geom_jitter() + -->
+<!--   labs(title = "p(LEAVE) ~ overage") + -->
+<!--   theme_minimal() -->
 
-```
+<!-- ``` -->
 
-Not much here. The basic shape of the relationship between `overage` and $p(LEAVE)$  does not change across levels of high usage.
- 
-```{r echo =T}
+<!-- High overage seems to affect the probability of leaving for some customers but not others.  Perhaps a third variable accounts for the difference, such as other high importance variables: `house`, `income`, high usage (`over_15mins_calls_per_month`).    For ease of visualization we need to bin these continuous variables. `dplyr` has a very handy function, `cut_number()`, that  bins continuous variables into categories with equal numbers of observations.  Our strategy will be to create [small multiples plots](https://en.wikipedia.org/wiki/Small_multiple) to see whether the relationship between `overage` and $p(LEAVE)$ varies by levels of `house`, `income`, high usage.    -->
 
-d %>%
-  mutate(p = predict(tree_model, type = "prob")[,1]) %>% 
-  ggplot(aes(overage, p)) +
-  geom_jitter() +
-  facet_wrap(~house_cat) +
-  labs(title = "p(LEAVE) ~ overage, varying by house")
+<!-- ```{r echo = T} -->
+<!-- # Add categorical variables -->
+<!-- d %<>% #This is an assignment operator from magrittr package, same as:  d <- d %>% -->
+<!--   mutate(income_cat = cut_number(income/1000, 4), -->
+<!--          house_cat = cut_number(house/100000,4), -->
+<!--          usage = cut_number(over_15mins_calls_per_month, 4)) -->
 
-``` 
+<!-- glimpse(d) -->
+<!-- ``` -->
 
-This is more promising. We can see that the  relationship between `overage` and $p(LEAVE)$ does depend on house value, such that at lower values of  `house` high `overage` is perfectly associated with high probabilities of leaving. What about `income`?
- 
-```{r echo =T}
+<!-- Notice that `cut_number()` has created a factor variable that indicates the numeric range of the bin. We will start by analyzing high usage. -->
 
-d %>%
-  mutate(p = predict(tree_model, type = "prob")[,1]) %>% 
-  ggplot(aes(overage, p)) +
-  geom_jitter() +
-  facet_wrap(~income_cat) +
-  labs(title = "p(LEAVE) ~ overage, varying by income")
 
-``` 
+<!-- ```{r echo =T} -->
 
-Likewise for `income`:  there is a high probability of leaving at high levels of `income`  and high levels of `overage`. What about `house` and `income` together?
+<!-- d %>% -->
+<!--   mutate(p = predict(tree_model, type = "prob")[,1]) %>%  -->
+<!--   ggplot(aes(overage, p)) + -->
+<!--   geom_jitter() + -->
+<!--   facet_wrap(~usage) + -->
+<!--   labs(title = "p(LEAVE) ~ overage, varying by usage") -->
 
-```{r echo =T}
+<!-- ``` -->
 
-d %>%
-  mutate(p = predict(tree_model, type = "prob")[,1]) %>% 
-  ggplot(aes(overage, p)) +
-  geom_jitter() +
-  facet_grid(house_cat~income_cat) +
-  labs(title = "p(LEAVE) ~ overage, varying by income and house")
+<!-- Not much here. The basic shape of the relationship between `overage` and $p(LEAVE)$  does not change across levels of high usage. -->
 
-``` 
+<!-- ```{r echo =T} -->
 
-Here we can see that `house`, `income`, and `overage`  together reveal structure in the probability of leaving.   In general, customers with high levels of `overage` have a high probability of leaving.  These customers could be targeted in a marketing campaign with an incentive structure around reducing  or eliminating the  penalty.  There are exceptions, however, so we can be even more specific. The marketing campaign should target customers who:
+<!-- d %>% -->
+<!--   mutate(p = predict(tree_model, type = "prob")[,1]) %>%  -->
+<!--   ggplot(aes(overage, p)) + -->
+<!--   geom_jitter() + -->
+<!--   facet_wrap(~house_cat) + -->
+<!--   labs(title = "p(LEAVE) ~ overage, varying by house") -->
 
-1. Have over $100 in overage fees per month living in  homes of below average value.
-2. Have over $100 in overage fees per month living in homes of above average value, who are in the highest quartile of income.
+<!-- ```  -->
 
-Let's use these rules to identify customers to target with an incentive designed around `overage`:
- 
-```{r echo = T}
-d %<>%
-  mutate(p = predict(tree_model, type = "prob")[,1],
-         p = round(p, 2),
-         target = ifelse((p > .75 & house/100000 < 4.53) |
-                        (p > .75 & house/100000 > 4.53 & income/1000 > 115), "yes", "no"))
+<!-- This is more promising. We can see that the  relationship between `overage` and $p(LEAVE)$ does depend on house value, such that at lower values of  `house` high `overage` is perfectly associated with high probabilities of leaving. What about `income`? -->
 
-table(target = d$target, `probability of leaving` = d$p)
-```
- 
-You could recommend that for these 881 customers Marketing should design a customized incentive centered on `overage.`
+<!-- ```{r echo =T} -->
+
+<!-- d %>% -->
+<!--   mutate(p = predict(tree_model, type = "prob")[,1]) %>%  -->
+<!--   ggplot(aes(overage, p)) + -->
+<!--   geom_jitter() + -->
+<!--   facet_wrap(~income_cat) + -->
+<!--   labs(title = "p(LEAVE) ~ overage, varying by income") -->
+
+<!-- ```  -->
+
+<!-- Likewise for `income`:  there is a high probability of leaving at high levels of `income`  and high levels of `overage`. What about `house` and `income` together? -->
+
+<!-- ```{r echo =T} -->
+
+<!-- d %>% -->
+<!--   mutate(p = predict(tree_model, type = "prob")[,1]) %>%  -->
+<!--   ggplot(aes(overage, p)) + -->
+<!--   geom_jitter() + -->
+<!--   facet_grid(house_cat~income_cat) + -->
+<!--   labs(title = "p(LEAVE) ~ overage, varying by income and house") -->
+
+<!-- ```  -->
+
+<!-- Here we can see that `house`, `income`, and `overage`  together reveal structure in the probability of leaving.   In general, customers with high levels of `overage` have a high probability of leaving.  These customers could be targeted in a marketing campaign with an incentive structure around reducing  or eliminating the  penalty.  There are exceptions, however, so we can be even more specific. The marketing campaign should target customers who: -->
+
+<!-- 1. Have over $100 in overage fees per month living in  homes of below average value. -->
+<!-- 2. Have over $100 in overage fees per month living in homes of above average value, who are in the highest quartile of income. -->
+
+<!-- Let's use these rules to identify customers to target with an incentive designed around `overage`: -->
+
+<!-- ```{r echo = T} -->
+<!-- d %<>% -->
+<!--   mutate(p = predict(tree_model, type = "prob")[,1], -->
+<!--          p = round(p, 2), -->
+<!--          target = ifelse((p > .75 & house/100000 < 4.53) | -->
+<!--                         (p > .75 & house/100000 > 4.53 & income/1000 > 115), "yes", "no")) -->
+
+<!-- table(target = d$target, `probability of leaving` = d$p) -->
+<!-- ``` -->
+
+<!-- You could recommend that for these 881 customers Marketing should design a customized incentive centered on `overage.` -->
 

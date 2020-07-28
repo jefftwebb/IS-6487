@@ -1,0 +1,128 @@
+---
+title: "Project: Modeling with Classification Trees"
+author: ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+
+```
+
+Note:  
+
+- Change the information in the yaml header above:  title and author.
+- Make sure output is html_document.
+- Once you are finished coding, clear your environment, and then run each chunk individually to make sure there are no errors.  (If necessary fix your code.) Once your code is error-free, click "knit" on the menu above. Your document should compile to HTML, provided that you have output set to "html_document."
+- In the code chunk above ("setup") echo is set to TRUE.  This means that the code in your chunks will be displayed, along with the results, in your compiled document.
+
+## Load and Transform Data
+
+Here is a data dictionary:
+
+- ANSWERED: Indicator for whether the call was answered.
+- INCOME:  Annual income of customer
+- FEMALE: Indicator for whether the customer is female
+- AGE:  Age of customer
+- JOB:  Indicator for  job type.
+- NUM_DEPENDENTS:  Number of dependents.
+- RENT:  Indicator for whether customer rents
+- OWN_RES:  Indicator for whether  customer owns residence
+- NEW_CAR:  Indicator of whether the  customer owns a new car
+- CHK_ACCT: Number of checking accounts
+- SAV_ACCT: Number of savings accounts
+- NUM_ACCTS:  Total number of   other accounts
+- MOBILE:  Indicator for whether the call back number is mobile
+- PRODUCT:  Type of product purchased. (0 represents no purchase)
+
+Here is code to clean and prepare the dataset for modeling.
+
+```{r}
+advise_invest <- read_csv("adviseinvest_clean.csv")  %>%
+  select(-product) %>% 
+  mutate(answered = factor(ifelse(answered==0, "no","yes"),
+                           levels  = c("no", "yes")),
+         female = factor(female),
+         job = factor(job),
+         rent = factor(rent),
+         own_res = factor(own_res),
+         new_car = factor(new_car),
+         mobile = factor(mobile)) 
+
+```
+
+
+## Questions
+
+### Q1.  
+
+The target variable for this modeling exercise is ANSWERED.  In this dataset, what proportion of calls were answered?
+
+In this case answered calls are the majority class.  A simple model would be to always predict the majority class.  Our tree models should have better accuracy than majority class prediction, which we will therefore use as a benchmark for evaluating subsequent models. 
+
+```{r}
+
+```
+
+### Q2.  
+
+Fit a tree model to the outcome using just one variable, income. We'll call this the "income model." What is the accuracy of the income model?
+
+```{r}
+
+
+```
+
+### Q3. 
+
+The first split in this tree, on income >= 39135, is guaranteed by the tree algorithm to yield the greatest information gain (IG) of any possible split. What is the IG associated with that split?
+
+The formula for IG combines the weighted entropy in the children (weighted by the proportion of the data in each node) and subtracts it from the entropy in the parent. Here is what you need to calculate:
+
+- entropy(parent): entropy in the parent, prior to the split.
+- entropy(c1): entropy in the first child.
+- p(c1): the proportion of observations from the parent that wind up in the first child after the split.
+- entropy(c2): entropy in the second child.
+- p(c2): the proportion of observations from the parent that wind up in the second child after the split.
+
+The formula is:
+
+IG = entropy(parent) - [p(c1) * entropy(c1) + p(c2) * entropy(c2)]
+
+Recall that entropy for any group is defined as:
+
+- p1 * log2(p1) - p2 * log2(p2),
+
+where p1 is the proportion of the first label and p2 is the proportion of the second label.
+
+The easiest way to do this calculation is to define as objects each of the elements in the formula.
+
+```{r}
+
+
+```
+
+### Q4. 
+
+Fit a tree model of the outcome using all the predictors (again, not including product, and having changed the indicators and the outcome into factors). We'll call this the "tree model."
+
+1. Create and upload a visualization of the tree model using the rpart.plot.version1() function. (This function creates a tree plot with less complexity than rpart.plot(), that is easier to read.)
+
+2. Identify the top 3 most important predictors in this model.
+
+```{r}
+
+```
+
+### Q5.
+
+Is the tree model better than the the income model?  Hint: calculate the accuracy of the tree model and compare it to the income model.
+
+```{r}
+
+```
+
+

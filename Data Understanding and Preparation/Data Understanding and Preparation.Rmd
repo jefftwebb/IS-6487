@@ -8,7 +8,7 @@ runtime: shiny_prerendered
 library(learnr)
 library(knitr)
 library(tidyverse)
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
 
 ```
 
@@ -31,27 +31,28 @@ simpsons <- simpsons %>%
          y = round(y, 2),
          group = factor(group))
 
+
 ```
 
 
-## Business Problem Statement
+<!-- ## Business Problem Statement -->
 
-After the last tutorial you wrote a Business Problem Statement for the MegaTelCo  case, which probably resembled the following:
+<!-- Here is the Business Problem Statement for the MegaTelCo  case: -->
 
-MegaTelCo currently loses about 20% of its customers every subscription period. This is a costly problem: lost customers represent lost revenue, and acquiring new customers is expensive.  
+<!-- >MegaTelCo currently loses about 20% of its customers every subscription period. This is a costly problem: lost customers represent lost revenue, and acquiring new customers is expensive.   -->
 
-The Marketing Department has done a fantastic job in previous campaigns to improve customer retention, increasing it an estimated 2% from baseline.  The purpose of the  proposed project is to prevent future revenue loss due to poor retention among customers who could be persuaded with a special offer to renew their contracts.  This project will support a new retention campaign, based on additional analytics, specifically:
+<!-- >The Marketing Department has done a fantastic job in previous campaigns to improve customer retention, increasing it an estimated 2% from baseline.  The purpose of the  proposed project is to prevent future revenue loss due to poor retention among customers who could be persuaded with a special offer to renew their contracts.  This project will support a new retention campaign, based on additional analytics, specifically: -->
 
-- Predict which customers will churn using a classification model tuned for maximum accuracy.
-- Segment the customer population by identifying, among those likely to churn, which customers are  also most  likely to respond to a special re-enrollment offer.
+<!-- >1. Predict which customers will churn using a classification model tuned for maximum accuracy. -->
+<!-- >2. Segment the customer population by identifying, among those likely to churn, which customers are  also most  likely to respond to a special re-enrollment offer. -->
 
-Marketing campaigns are costly. Targeting customers more precisely than has been done in the past should improve the ROI for the campaign. The benchmark for success on this project is to match  improvements in retention  for previous campaigns (2%), while spending substantially less money.
+<!-- >Marketing campaigns are costly. Targeting customers more precisely than has been done in the past should improve the ROI for the campaign. The benchmark for success on this project is to match  improvements in retention  for previous campaigns (2%), while spending substantially less money. -->
 
-The project deliverable will be a list of customers  sent to marketing to include in the campaign. Additional deliverables will need to be agreed upon with the analyst and added to a revised business problem statement.
+<!-- >The project deliverable will be a list of customers  sent to marketing to include in the campaign. Additional deliverables will need to be agreed upon with the analyst and added to a revised business problem statement. -->
 
-The project will be completed by December 1, with the draft of the report circulated  for comments by November 1.  This timeline will provide plenty of time for Marketing  to prepare for a campaign kicking off on January 15.
+<!-- >The project will be completed by December 1, with the draft of the report circulated  for comments by November 1.  This timeline will provide plenty of time for Marketing  to prepare for a campaign kicking off on January 15. -->
 
-## Tasks
+## Data Tasks
 
 In ABOK Ch. 8, the job tasks associated with the CRISP-DM phases of data understanding and data preparation are:
 
@@ -62,7 +63,7 @@ In ABOK Ch. 8, the job tasks associated with the CRISP-DM phases of data underst
 5. Document and Report Finding
 6. Refine the Business and Analytics Problem Statements
 
-This amount of detail is helpful and warranted.  For example, with respect to the first task, most real-world analytics  projects involve a data query or request. Using your understanding of the business problem, you  define the dataset you think you will need for the project. Typically, SQL code would then be written (either by you or an analyst) to extract the specified data from an existing database.  In the MegaTelCo case  we have defined the analytics problem as classification, since we  want to model and predict customer churn based on historical data.  We therefore need a variable in the data set representing customer churn, as well as a variety of possible predictors consisting in behavioral and financial information.  Exactly which variables should be included?   That is a complicated question. To answer it intelligently would require a more or less sophisticated understanding of the phenomenon of churn, an understanding that could be obtained by interviewing subject matter experts.
+This amount of detail is helpful and warranted.  For example, with respect to the first task, most real-world analytics  projects involve a data query or request. Using your understanding of the business problem, you  define the dataset you think you will need for the project. Typically, SQL code would then be written (either by you or an analyst) to extract the specified data from an existing database.  In the MegaTelCo case  we have defined the analytics problem as classification, since we  want to model and predict customer churn based on historical data.  We therefore need a variable in the data set representing customer churn, as well as a variety of possible predictors consisting in behavioral and financial information.  Exactly which variables?   That is a complicated question. To answer it intelligently would require a more or less sophisticated understanding of the phenomenon of churn, an understanding that could be obtained by interviewing subject matter experts.
 
 However, to make the process easy to remember and implement, we can simplify these JTA into three main steps:
  
@@ -86,7 +87,7 @@ data.frame(Variable = c("College", "Income",  "Overage", "Leftover", "House", "H
   kable
 ```
 
-In reviewing the data dictionary, you should begin thinking about how you will use these different variables.
+In reviewing the data dictionary, you should begin thinking about how you will use these different variables. In particular, for modeling you will need to identify the target variable.
 
 ```{r target}
 quiz(
@@ -117,13 +118,36 @@ Let's import that dataset, megatelco.csv, making sure also to load the packages 
 Note that this tutorial is written as if we were working within an R Markdown document with code chunks. Some of the later chunks not involving changes to the data will be interactive.
 
 
-```{r global, echo=T, message=FALSE, warning=FALSE}
+```{r echo = T}
 
 # Load packages
 library(tidyverse)
 
 # Import data
-d <- read_csv("megatelco.csv")
+m <- read_csv("megatelco.csv")
+
+
+```
+
+
+```{r include=FALSE}
+
+m <- read_csv("data/megatelco.csv") %>% 
+  mutate(REPORTED_USAGE_LEVEL = fct_collapse(REPORTED_USAGE_LEVEL,
+                                             low = c("very_little", "little"),
+                                              avg = "avg",
+                                              high = c("high", "very_high")),
+         REPORTED_USAGE_LEVEL = as.character(REPORTED_USAGE_LEVEL),
+         REPORTED_SATISFACTION = fct_collapse(REPORTED_SATISFACTION,
+                                             low = c("very_unsat", "unsat"),
+                                              avg = "avg",
+                                              high = c("sat", "very_sat")),
+         REPORTED_SATISFACTION = as.character(REPORTED_SATISFACTION),
+         CONSIDERING_CHANGE_OF_PLAN = fct_collapse(CONSIDERING_CHANGE_OF_PLAN,
+                                             no = c("no", "never_thought"),
+                                              maybe = "perhaps",
+                                              yes = c("considering", "actively_looking_into_it")),
+         CONSIDERING_CHANGE_OF_PLAN = as.character(CONSIDERING_CHANGE_OF_PLAN))
 
 
 ```
@@ -131,9 +155,9 @@ d <- read_csv("megatelco.csv")
 Of course, for this code to work on your machine the file you are loading must be in the working directory.  Which folder is that?  You can check with `getwd()`.
 
 
-Here we have imported the megatelco.csv file from the working directory and assigned it to an object, d (for "data"), stored in memory. I like to keep the names of data objects short to reduce typing. 
+Here we have imported the megatelco.csv file from the working directory and assigned it to an object, `m` (for "MegaTelCo"), stored in memory. I like to keep the names of data objects short to reduce typing. 
 
-Notice that in the code chunks I am including comments (text preceded by a hashtag, #, is ignored by R). This makes my code easier to interpret---for me, when coming back to it, or for a colleague, when doing peer review.
+Notice that in the code chunks I am including comments (text preceded by a hashtag, `#`, is ignored by R). This makes my code easier to interpret---for me, when coming back to it, or for a colleague, when doing peer review.
 
 
 
@@ -145,9 +169,9 @@ The next step is to take a look at the data and  make sure that  it loaded corre
 - Gives the dimensions of the data.
 - Prints the first 10 rows.
 
-```{r glimpse, echo=T, message=F, warning=F}
+```{r ex1, exercise=T}
 # Inspect data
-glimpse(d)
+glimpse(m)
 ```
 
 The `summary()` function in base R is useful for seeing how the data is distributed.  This is a generic function in R, meaning that it can be used to produce summaries for different sorts of objects. When called on a data frame it summarizes distributions by variable types as follows:
@@ -156,40 +180,31 @@ The `summary()` function in base R is useful for seeing how the data is distribu
 - character: count of observations.
 - factor: counts of observations by level.  
 
-```{r summary, echo=T, message=F, warning=F}
+```{r ex2, exercise=T}
 # Inspect data
-summary(d)
+summary(m)
 
 ```
 
 
 
-Some problems are immediately apparent in the summary table.  All the categorical (or qualitative) variables  have a data type of character. These should be converted into factors, not only because storing such variables as factors is more efficient, but also because they may have a  structure that should be represented with factor levels. For example, REPORTED_SATISFACTION  has the following unique values:
+Some problems are immediately apparent in the summary table.  All the categorical (or qualitative) variables  have a data type of "character." These should be converted into factors, not only because storing such variables as factors is more memory efficient, but also because they may have a  structure that should be represented with factor levels. For example, `REPORTED_SATISFACTION`  has the three unique values: "low," "avg," "high." But because this is a character variable, these categories are not ordered, but they obviously should be (from "low" to "high").  We will  therefore transform this variable into an ordinal factor, making sure that the levels are in the correct order (more on that below).
 
-```{r unique, echo=T, message=F, warning=F}
-# Find unique values with distinct()
+Additionally, there are some mistaken values. `INCOME` and `HOUSE` both represent dollar values. Thus negative values should not be regarded merely as outliers but as errors.  `HANDSET_PRIC`E has a max that  is unrealistically high. And `OVER_15MINS_CALLS_MONTH`  has three missing observations marked as `NA`.
 
-d %>%
-  distinct(REPORTED_SATISFACTION) 
+The appropriate workflow is to clean the data then explore it (though sometimes you won't know that data needs to be cleaned until you explore it, so these two steps---cleaning and exploring---are definitely non-linear and iterative).  Why clean first? Unclean data can sometimes be difficult to explore.  For example, the large value of `HANDSET_PRICE` tends to make the other values illegible in a histogram.  Compare the histogram of `HANDSET_PRICE` with and without the large value:
 
-```
-
-
-Because REPORTED_SATISFACTION is a character variable, these categories are not ordered, but they obviously should be (from "very unsat" to "very sat").  We will  therefore transform this variable into an ordinal factor, making sure that the levels are in the correct order (more on that below).
-
-Additionally, there are some mistaken values. INCOME and HOUSE both represent dollar values. Thus negative values should not be regarded merely as outliers but as errors.  HANDSET_PRICE has a max that  is unrealistically high. And OVER_15MINS_CALLS_MONTH  has three missing observations marked as `NA`.
-
-The appropriate workflow is to clean the data then explore it (though sometimes you won't know that data needs to be cleaned until you explore it, so these two steps---cleaning and exploring---are definitely non-linear and iterative).  Why clean first? Unclean data can sometimes be difficult to explore.  For example, the large value of HANDSET_PRICE tends to make the other values illegible in a histogram.  Compare the histogram of HANDSET_PRICE with and without the large value:
-
-```{r hist, echo=T, message=F, warning=F}
+```{r ex4, exercise=T}
 
 # Histogram with large value
-ggplot(d, aes(HANDSET_PRICE)) +
+ggplot(m, aes(HANDSET_PRICE)) +
   geom_histogram() +
   labs(title = "Distribution of HANDSET_PRICE (with large value)")
+```
 
+```{r ex5, exercise=T}
 # Histogram without large value
-d %>%
+m %>%
   filter(HANDSET_PRICE < 1000) %>%
   ggplot(aes(HANDSET_PRICE)) +
   geom_histogram() +
@@ -198,13 +213,13 @@ d %>%
 
 ```
 
-One last thing. What is the grain of the data? Each row includes information on a customer, as indicated by the customer ID column.  But do we have only one row per customer? To answer that question we can check to see whether the number of unique or distinct IDs is equal to 5000, the number of rows in the data set.
+One last thing. What is the grain of the data? By that I mean:  What does each row represent? In this dataset rows include information on a customer, as indicated by the customer `ID` column.  But do we have only one row per customer or multiple rows? To answer that question we can check to see whether the number of unique or distinct IDs is equal to 5000, the number of rows in the data set.
 
 
-```{r num_customers, echo=T, message=F, warning=F}
+```{r ex6, exercise=T}
 
 # Count the number of distinct IDs
-d %>%
+m %>%
   distinct(ID) %>%
   count
 
@@ -220,27 +235,51 @@ Let's summarize the issues that we would like to fix:
 - COLLEGE has values of  `zero` and `one.`  We will change these to "no" and "yes," since there are only two values, and spelling out the numbers is weird.
 - Remove negative values of `INCOME` and `HOUSE`.
 - Remove absurd value of `HANDSET_PRICE`.
-- Remove rows with missing values (`NA`) in `OVER_15MINS_CALLS_PER_MONTH`. Dealing with missing values is sometimes a complicated problem.  In this case, because the number of missing values is small relative to the size of the dataset, it is fine to solve the problem by removing rows.
-- If our objective was modeling we would want to remove ID because it is obviously not a useful predictor of churn. For now we can leave ID in the data set.
-- I find it hard to type variable names in uppercase, so I will switch them to [snake_case](https://en.wikipedia.org/wiki/Snake_case) with all lowercase. Snake_case connects words with an underscore.
+- Remove rows with missing values (`NA`) in `OVER_15MINS_CALLS_PER_MONTH`. Dealing with missing values can be a complicated problem.  In this case, because the number of missing values is small relative to the size of the dataset, it is fine to solve the problem by removing rows.
+- If our objective was modeling we would want to remove `ID` because it is obviously not a useful predictor of churn. For now we can leave `ID` in the data set.
+- I find it hard to type variable names in uppercase, so I will switch them to [snake_case](https://en.wikipedia.org/wiki/Snake_case) with all lowercase. Snake_case connects words with an underscore. This step is obviously optional.
 
-Let's do this last step right now  using `clean_names()` function in the `janitor` package.
+Let's reformat column names now  using the `clean_names()` function in the `janitor` package.
 
-```{r echo=T, message=F, warning=F}
-
+```{r include=F}
 library(janitor)
+m_clean <- m %>%
+  clean_names() %>% 
+  mutate(reported_satisfaction = factor(reported_satisfaction,
+                                        levels = c("low","avg", "high"),
+                                        ordered = T),
+         reported_usage_level = factor(reported_usage_level,
+                                       levels = c("low",  "avg", "high"),
+                                       ordered = T),
+         considering_change_of_plan = factor(considering_change_of_plan,
+                                       levels = c("no", "maybe", "yes"),
+                                       ordered = T),
+         leave = factor(leave),
+         college = ifelse(college == "one", "yes", "no")) %>% 
+  filter(income > 0,
+       house > 0,
+       handset_price < 1000,
+       !is.na(over_15mins_calls_per_month))
 
-# Switch column names to lower case and snake_case
-d <- d %>%
-  clean_names()
-
-# Check that it worked with names() which returns column names
-names(d)
 
 ```
 
 
-Notice that rather than saving this new dataset with clean names  as a different object, we simply overwrite the old object. This strategy keeps the environment uncluttered (see the upper right quadrant in RStudio  for a list of the objects in memory)  but it can create problems. For example, you may  mistakenly replace your original data set with one that  contains an error. If that happens, you can simply go back to the beginning of your code, from the point at which you downloaded the .csv source file from your working directory, and rerun everything. But: **NEVER change that source file itself!**  
+```{r ex7, exercise=T}
+
+library(janitor)
+
+# Switch column names to lower case and snake_case
+m_clean <- m %>%
+  clean_names()
+
+# Check that it worked with names() which returns column names
+names(m_clean)
+
+```
+
+
+Here we will store our changes in a new object, `m_clean`.  However, rather than saving this new dataset as a different object, we could have simply overwritten the old object. Doing so would have the advantage of keeping the environment uncluttered (see the upper right quadrant in RStudio  for a list of the objects in memory)  but it could create problems. For example, you might  mistakenly replace your original data set with one that  contains an error. If that happens, you can simply go back to the beginning of your code, from the point at which you downloaded the .csv source file from your working directory, and rerun everything. It should be obvious that this is one of the key advantages of working reproducibly in RMarkdown.  But---this is key---**NEVER change that source file itself!**  
 
 
 
@@ -249,40 +288,40 @@ Notice that rather than saving this new dataset with clean names  as a different
 In base R, the `factor()` function will change a character variable to a factor.  In doing so we need to specify the factor structure, otherwise R will automatically assign levels based on alphabetic order, which in this case is inappropriate and will cause problems, for example, when plotting. 
 
 
-```{r echo = T, warning=F}
+```{r ex8, exercise=T}
 # Boxplot of Income ~ reported_satisfaction
-ggplot(d, aes(reported_satisfaction, income)) +
+ggplot(m, aes(REPORTED_SATISFACTION, INCOME)) +
   geom_boxplot() +
   labs(title = "Income ~ reported_satisfaction")
 
 ```
 
-Ideally, the categories on the x-axis would be ordered by value. To accomplish that we can use `factor()` to set the factor levels, and order them at the same time,  with the `levels` and `ordered` arguments.  The `summary()` function can be used afterwards to check that the factor structure has been successfully revised, since it will list the levels in order.
+Ideally, the categories on the x-axis would be ordered by value. To accomplish that we can use `factor()` to set the factor levels, and order them at the same time,  with the `levels` and `ordered` arguments.  The `summary()` function can be used afterwards to check that the factor structure has been successfully revised, since it will list the levels in order. In the following code we use the strategy mentioned above of overwriting the old object with the new one.
 
 
-```{r echo=T, warning=F}
+```{r ex9, exercise=T}
 
-# Create factors
-d <- d %>%
+# Create ordered factors
+m_clean <- m_clean %>%
   mutate(reported_satisfaction = factor(reported_satisfaction,
-                                        levels = c("very_unsat","unsat","avg", "sat", "very_sat"),
+                                        levels = c("low","avg", "high"),
                                         ordered = T),
          reported_usage_level = factor(reported_usage_level,
-                                       levels = c("very_little", "little", "avg", "high", "very_high"),
+                                       levels = c("low",  "avg", "high"),
                                        ordered = T),
          considering_change_of_plan = factor(considering_change_of_plan,
-                                       levels = c("no", "never_thought", "perhaps", "considering", "actively_looking_into_it"),
+                                       levels = c("no", "maybe", "yes"),
                                        ordered = T),
          leave = factor(leave))
 
 # Check that it worked
-summary(d)
+summary(m_clean)
 ```
 
 This looks good.  Let's look at the "Income ~ reported_satisfaction" plot again.  
 
-```{r cat_plot, exercise=T, warning=F}
-ggplot(d, aes(reported_satisfaction, income)) +
+```{r ex10, exercise=T}
+ggplot(m_clean, aes(reported_satisfaction, income)) +
   geom_boxplot() +
   labs(title = "Income ~ reported_satisfaction")
 ```
@@ -291,27 +330,22 @@ The plot now has appropriately ordered categories on the x-axis.
 
 ### Fix college
 
-Next task is to replace the existing values of the college variable with something that makes more sense.  We could use `factor_recode()` or, for a more general solution, the `ifelse()` command in base R. This latter function is useful (though it becomes unwieldy when there are large numbers of replacements).  The syntax is  `ifelse(test, yes, no)`, where:
+Next task is to replace the existing values of the college variable with something that makes more sense.  We will use the useful `ifelse()` command in base R. The syntax is  `ifelse(test, yes, no)`, where:
 
 - "test"	is an object which can be coerced to logical mode.
 - "yes"	returns values for true elements of test.
 - "no" returns values for false elements of test.
 
 
-```{r echo=T, warning=F}
+```{r ex11, exercise=T}
 
-# Transform values in college using recode_factor()
-d <- d %>%
-  mutate(college = recode_factor(college, "one" = "yes", "zero" = "no"))
-
-# Check that it worked
-glimpse(d)
-
-# Example using ifelse()
-d <- d %>%
+# Transform values in college using ifelse()
+m_clean <- m_clean %>%
   mutate(college = ifelse(college == "one", "yes", "no"),
          college = factor(college))
 
+# Check that it worked
+levels(m_clean$college)
 
 ```
 
@@ -319,35 +353,48 @@ d <- d %>%
 
 Next, remove negative values of `income` and `house`, unrealistic values of `handset_price`, and rows with missing values in `over_15mins_calls_per_month`. But what should our threshold be for deciding whether a value of `handset_price` is too large?
 
-```{r echo=T, warning=F}
+```{r ex12, exercise=T}
 # Look at the distribution of phone prices
 
-d %>%
-  arrange(desc(handset_price)) %>%
-  select(handset_price) %>%
+m %>%
+  arrange(desc(HANDSET_PRICE)) %>%
+  select(HANDSET_PRICE) %>%
   head
 
 ```
 
-We can see that there is just one unlikely value of `handset_price`, which we can remove by subsetting for values less than 1000. To remove the NAs we will use the `is.na()` function which we can reverse with `!is.na()` to pick out the non-NA values.  `is.na()` returns `TRUE` if the value is NA and `FALSE` otherwise, while `!is.na()` does the opposite. For example, consider a vector, `y`, with these values: NA, NA, 3, 4.  The code `is.na(y)` would be evaluated as `TRUE  TRUE FALSE FALSE` while the code `!is.na(y)` would be evaluated as `FALSE FALSE  TRUE  TRUE`.
+We can see that there is just one unlikely value of `handset_price`, which we can remove by subsetting for values less than 1000. 
 
-
-
-```{r echo=T, warning=F}
+```{r ex13, exercise=T}
 # Remove rows with mistaken or missing values
 
-d <- d %>%
+m_clean <- m_clean %>%
   filter(income > 0,
          house > 0,
-         handset_price < 1000,
-         !is.na(over_15mins_calls_per_month))
+         handset_price < 1000)
 
 # Check that it worked
-summary(d)
-
-# Check the new size of the dataset
-glimpse(d)
+m_clean %>% 
+  select(income, house, handset_price) %>% 
+  summary
 ```
+
+### Remove NAs
+
+To remove the NAs in `over_15mins_calls_per_month` we will use the `na.omit()` function, which removes any row in the dataset containing an `NA.`
+
+```{r ex13_5, exercise=T}
+# Remove NAs
+m_clean <- m_clean %>%
+  na.omit
+
+# Check that it worked
+m_clean %>% 
+  select(over_15mins_calls_per_month) %>% 
+  summary
+```
+
+No NAs.
 
 We have removed 6 rows in all and the dataset should now be clean and ready for exploration.  
 
@@ -363,7 +410,7 @@ Before we begin, let's motivate EDA as a key stage in data analysis using a caut
 
 The dataset for this example contains two continuous variables, `x` and `y`, and a factor variable, `group`.
 
-```{r echo=T, warning=F}
+```{r ex14, exercise=T}
 # Inspect the data
 glimpse(simpsons)
 summary(simpsons)
@@ -427,7 +474,7 @@ ggplot(simpsons, aes(x, y)) +
 If this scatterplot was the only one we looked at we might conclude that  `x` and `y` are negatively related:  when `x` goes up `y` tends to go down, and vice versa.  But what about the `group` variable?  Let's now color the points by group membership.
 
 
-```{r echo=T}
+```{r ex15, exercise=T}
 # Create scatterplot of x ~ y, color varying by group
 ggplot(simpsons, aes(x, y, col = group)) +
   geom_point() +
@@ -460,18 +507,15 @@ Note: these are hypotheses  that we are seeking to explore--- keeping an open mi
 
 ### Outcome variable
 
-Before we get started examining these hypotheses, let's look at the distribution of `leave.`  This is a binary variable so we need to compute the proportions of `STAY` and `LEAVE`, which we can do in a couple of different ways:
+Before we get started examining these hypotheses, let's look at the distribution of `leave.`  This is a binary variable, so we need to compute the proportion of `STAY` vs. `LEAVE`, which we can do with the following code:
 
-```{r echo = T}
-# Using table() and prop.table()
-table(d$leave) %>% 
-  prop.table
-
-# Using ifelse() and mean()
-ifelse(d$leave == "STAY", 1, 0) %>% 
-  mean
+```{r ex16, exercise=T}
+# Proportion of Stay
+mean(m_clean$leave == "STAY") 
 
 ```
+
+Why does this code work?  `m_clean$leave == "STAY"` evaluates logically, as `TRUE` or `FALSE`, which R treats as 1 or 0.  The mean of a 0/1 vector is just the proportion of 1s.
 
 Interestingly, although the discussion of this case in DSB noted that about 20% of MegaTelCo customers do not renew contracts, in this dataset the percentage is more like 50%. 
 
@@ -483,16 +527,16 @@ Because the outcome is binary, the plot of choice for continuous predictors is t
 
 Here is example code for a boxplot comparing `income` at the two levels of `leave`. 
 
-```{r income, exercise=TRUE}
+```{r ex17, exercise=T}
 
-ggplot(d, aes(leave, income)) +
+ggplot(m_clean, aes(leave, income)) +
   geom_boxplot() +
   labs(title = "leave ~ income")
 
 ```
 
 
-We can see that there is a slight difference, with higher income customers being slightly more likely to leave, surprisingly.
+There is a slight difference, with higher income customers being slightly more likely to leave, surprisingly.
 
 Now look at `house`.  Create a boxplot comparing `house` at the two levels of `leave`.
 
@@ -512,7 +556,7 @@ ggplot() +
 
 ```{r house-solution}
 
-ggplot(d, aes(leave, house)) +
+ggplot(m_clean, aes(leave, house)) +
   geom_boxplot() +
   labs(title = "leave ~ house")
   
@@ -537,7 +581,7 @@ ggplot() +
 
 ```{r handset-solution}
 
-ggplot(d, aes(leave, handset_price)) +
+ggplot(m_clean, aes(leave, handset_price)) +
   geom_boxplot() +
   labs(title = "leave ~ handset_price")
   
@@ -547,7 +591,7 @@ ggplot(d, aes(leave, handset_price)) +
 
 ### Behavioral
 
-Are heavy users more likely to leave? Create a boxplot to comparing `overage` at the two levels of `leave`.
+Are heavy mobile users more likely to leave? Create a boxplot to comparing `overage` at the two levels of `leave`.
 
 ```{r overage, exercise=TRUE, exercise.lines=5}
 
@@ -566,7 +610,7 @@ ggplot() +
 
 ```{r overage-solution}
 
-ggplot(d, aes(leave, overage)) +
+ggplot(m_clean, aes(leave, overage)) +
   geom_boxplot() +
   labs(title = "leave ~ overage")
   
@@ -591,7 +635,7 @@ ggplot() +
 
 ```{r mins-solution}
 
-ggplot(d, aes(leave, over_15mins_calls_per_month)) +
+ggplot(m_clean, aes(leave, over_15mins_calls_per_month)) +
   geom_boxplot() +
   labs(title = "leave ~ over_15mins_calls_per_month")
   
@@ -615,7 +659,7 @@ ggplot() +
 
 ```{r duration-solution}
 
-ggplot(d, aes(leave, average_call_duration)) +
+ggplot(m_clean, aes(leave, average_call_duration)) +
   geom_boxplot() +
   labs(title = "leave ~ average_call_duration")
   
@@ -625,47 +669,35 @@ Essentially no difference for `average_call_duration`.
 
 What about reported usage?  Since this is a categorical variable, a barplot is a good choice.   The creation of the barplot is a little tricky, however, in part because we need to do some data manipulation before creating the plot.
 
-1. There are too many categories of usage for easy comparison. Such a plot would be confusing. In order to focus on the two most important categories, where we would expect to see the biggest differences---low usage versus high usage---we need to collapse the two lowest and the two highest categories using a very handy function called `fct_collapse`.  The syntax for the function should make sense when you review the code below. 
-
-2. For accurate comparison of churn within usage categories it is often convenient to turn counts into proportions, which requires some extra calculation.  Thus, we will report the *proportion* of `STAY` vs. `LEAVE` *within each level* of usage, rather than counts.
+For accurate comparison of churn within usage categories it is often convenient to turn counts into proportions, which requires some extra calculation.  Thus, we will report the *proportion* of `STAY` vs. `LEAVE` *within each level* of usage, rather than counts.
 
 Here is the base table:
 
-```{r echo=T}
+```{r ex18, exercise=T}
 
-d %>%
-  mutate(reported_usage_level = fct_collapse(reported_usage_level,
-                                             low = c("very_little", "little"),
-                                              avg = "avg",
-                                              high = c("high", "very_high"))) %>%
+m_clean %>%
   count(leave, reported_usage_level) 
   
 ```
 
-We could pipe this table into `ggplot` code for a barplot, as follows:
+Notice that the `count()` function automatically creates a count variable in the summary table titled, `n`. 
 
-```{r echo=T}
+Next, pipe this table into `ggplot` code for a barplot, as follows:
 
-d %>%
-  mutate(reported_usage_level = fct_collapse(reported_usage_level,
-                                             low = c("very_little", "little"),
-                                              avg = "avg",
-                                              high = c("high", "very_high"))) %>%
+```{r ex19, exercise=T}
+
+m_clean %>%
   count(leave, reported_usage_level) %>%
   ggplot(aes(reported_usage_level, n, fill = leave)) +
   geom_col()
   
 ```
 
-Note: We use `geom_col()` rather than `geom_bar` because pre-calculated values are being displayed (`geom_col` is equivalent to `geom_bar(stat = "identity")`). The `fill` argument indicates that the bars should be colored by the two `leave` categories. However, the default setting in `geom_col()` is for stacked bars, which makes comparison almost impossible.  Putting the bars side-by-side, `position = "dodge"`, works better  since, perceptually, it is easier to see differences in  height than it is to see differences in area. Moreover,  in a dodged barplot the y-axis values are meaningful for each group. Here is a plot with dodged bars:
+Note: We use `geom_col()` rather than `geom_bar` because pre-calculated values are being displayed. The `fill` argument indicates that the bars should be colored by the two `leave` categories. However, the default setting in `geom_col()` is for stacked bars, which makes comparison almost impossible.  Putting the bars side-by-side, `position = "dodge"`, works better  since, perceptually, it is easier to see differences in  height than it is to see differences in area. Moreover,  in a dodged barplot the y-axis values are meaningful for each group. Here is a plot with dodged bars:
 
-```{r echo=T}
+```{r ex20, exercise=T}
 
-d %>%
-  mutate(reported_usage_level = fct_collapse(reported_usage_level,
-                                             low = c("very_little", "little"),
-                                              avg = "avg",
-                                              high = c("high", "very_high"))) %>%
+m_clean %>%
   count(leave, reported_usage_level) %>%
   ggplot(aes(reported_usage_level, n, fill = leave)) +
   geom_col(position = "dodge")
@@ -675,15 +707,11 @@ d %>%
 
 When counts for categories are dramatically different (as in this case) it can work better to plot proportions.  The  problem is that high frequency categories force a scale that makes it difficult to appreciate  the  relative magnitude of differences in low frequency categories.   Switching to proportions solves that problem. To get the proportion of `STAY` and `LEAVE` at each level of usage we need to divide each `n` by the sum of `n` in each usage level:
 
-```{r echo=T}
+```{r ex21, exercise=T}
 
-d %>%
-  mutate(reported_usage_level = fct_collapse(reported_usage_level,
-                                             low = c("very_little", "little"),
-                                              avg = "avg",
-                                              high = c("high", "very_high"))) %>%
+m_clean %>%
   count(leave, reported_usage_level) %>%
-  # group_by usage to get the proportion of churn in each level
+  # group_by "usage" to get the proportion of churn in each level
   group_by(reported_usage_level) %>% 
   mutate(proportion = n / sum(n)) 
   
@@ -693,11 +721,7 @@ Next, we pipe this table into `ggplot` for visualization:
 
 ```{r usage, exercise=TRUE,echo=T}
 
-d %>%
-  mutate(reported_usage_level = fct_collapse(reported_usage_level,
-                                             low = c("very_little", "little"),
-                                              avg = "avg",
-                                              high = c("high", "very_high"))) %>%
+m_clean %>%
   count(leave, reported_usage_level) %>%
   group_by(reported_usage_level) %>%
   mutate(proportion = n / sum(n)) %>%
@@ -708,6 +732,22 @@ d %>%
 ```
  
 Now we can see that the difference between `LEAVE` and `STAY` in the average groups is is actually larger than it seemed in the earlier plot. Overall, however, there is not much difference between the groups.  Self-reported low users  were slightly more likely to stay, while average users were less likely.
+
+A simpler version of this plot would plot only the proportion of `LEAVE`:
+
+
+```{r usage2, exercise=TRUE,echo=T}
+
+m_clean %>%
+  group_by(reported_usage_level) %>%
+  summarize(proportion = mean(leave=="LEAVE")) %>%
+  ggplot(aes(reported_usage_level, proportion)) +
+  geom_col() +
+  labs(title = "leave ~ usage level")
+  
+```
+
+This barplot, while it captures the same information, can be misleading because the proportion for `STAY` is missing.  For this reason the earlier plot, with bars for both `STAY` and `LEAVE`, is preferable.
 
 ### Attitudinal
 
@@ -723,7 +763,7 @@ These variables also are categorical, so we will use a similar strategy as above
 
 ```{r sat-hint}
 
-# d %>%
+# m_clean %>%
 #   mutate() %>%
 #   count %>%
 #   group_by() %>%
@@ -736,11 +776,7 @@ These variables also are categorical, so we will use a similar strategy as above
 
 ```{r sat-solution}
 
-d %>%
-  mutate(reported_satisfaction = fct_collapse(reported_satisfaction,
-                                             low = c("very_unsat", "unsat"),
-                                              avg = "avg",
-                                              high = c("sat", "very_sat"))) %>%
+m_clean %>%
   count(leave, reported_satisfaction) %>%
   # group_by satisfaction to calculate the proportion leaving in each level
   group_by(reported_satisfaction) %>%
@@ -765,7 +801,7 @@ Create the same sort of plot for `considering_change_of_plan`.
 
 ```{r change-hint}
 
-# d %>%
+# m_clean %>%
 #   mutate() %>%
 #   count %>%
 #   group_by() %>%
@@ -778,11 +814,7 @@ Create the same sort of plot for `considering_change_of_plan`.
 
 ```{r change-solution}
 
-d %>%
-  mutate(considering_change_of_plan = fct_collapse(considering_change_of_plan,
-                                             no = c("no", "never_thought"),
-                                              maybe = "perhaps",
-                                              yes = c("considering", "actively_looking_into_it"))) %>%
+m_clean %>%
   count(leave, considering_change_of_plan) %>%
   group_by(considering_change_of_plan) %>%
   mutate(proportion = n / sum(n)) %>%
@@ -798,11 +830,7 @@ These differences are relatively small. Still, we observe *exactly the reverse* 
 
 ```{r house_int, exercise=TRUE}
 
-d %>%
-  mutate(considering_change_of_plan = fct_collapse(considering_change_of_plan,
-                                             no = c("no", "never_thought"),
-                                              maybe = "perhaps",
-                                              yes = c("considering", "actively_looking_into_it"))) %>%
+m_clean %>%
   ggplot(aes(leave, house)) +
   geom_boxplot() +
   facet_wrap(~considering_change_of_plan) +
@@ -810,7 +838,7 @@ d %>%
   
 ```
 
-Notice that the syntax for `facet_wrap()` is to specify the variable on which you would like to wrap, preceded by a tilde.
+Notice that the syntax for `facet_wrap()` is to specify the factor variable on which you would like to wrap, preceded by a tilde.
 
 Try to create a similar plot for overage:  `leave` ~ `overage` varying by `considering_change_of_plan`.
 
@@ -822,7 +850,7 @@ Try to create a similar plot for overage:  `leave` ~ `overage` varying by `consi
 
 ```{r overage_int-hint}
 
-# d %>%
+# m_clean %>%
 #   mutate() %>%
 #   ggplot() +
 #   geom_boxplot() +
@@ -833,11 +861,7 @@ Try to create a similar plot for overage:  `leave` ~ `overage` varying by `consi
 
 ```{r overage_int-solution}
 
-d %>%
-  mutate(considering_change_of_plan = fct_collapse(considering_change_of_plan,
-                                             no = c("no", "never_thought"),
-                                              maybe = "perhaps",
-                                              yes = c("considering", "actively_looking_into_it"))) %>%
+m_clean %>%
   ggplot(aes(leave, overage)) +
   geom_boxplot() +
   facet_wrap(~considering_change_of_plan) +
@@ -847,7 +871,7 @@ d %>%
 
 Is there a difference in either plot?  Not really.  We see the same basic relationship at each level of the considering variable between, on the one hand, `house` and `leave`, and, on the other, `overage` and `leave`.
 
-### EDA Summary
+## EDA Summary
 
 There is always more EDA to do!   In fact, because the phases in the CRISP-DM model  are  iterative and reversible, later phases in a project, such as modeling and model evaluation/deployment,  will often necessitate more EDA.  For now, let's summarize what we have learned.   In some cases our initial hypotheses were supported, in other cases not.
 
